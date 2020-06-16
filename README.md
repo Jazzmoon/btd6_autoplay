@@ -1,11 +1,9 @@
 # Bloons TD 6 Auto Play
 
-## Notice
-Right now, this is set up to be exact co-ordinates. That being said, you may need to adjust the measurements to run on your resepctive device.
-
 ## Usage
 
-This requires games to be played in 1920x1080 fullscreen to work. If you need a different resolution, change the pixel co-ordinates manually.
+This requires games to be played in fullscreen with auto-start to work.
+
 In addition to Python3 or higher, you will need to run the following code in a terminal:
 
 ```bash
