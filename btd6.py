@@ -21,8 +21,9 @@ def getPosOf(image, conf=0.3):
     return locationCenter
 
 def startUp(preset='darkCastle'):
+    time.sleep(3)
     pg.click(getPosOf('./images/main/play.png')) # Play
-    time.sleep(0.3)
+    time.sleep(0.7)
     if preset == 'darkCastle':
         pg.click(getPosOf('./images/main/expert.png')) # Expert
         time.sleep(0.3)
@@ -31,7 +32,8 @@ def startUp(preset='darkCastle'):
         pg.click(getPosOf('./images/main/easy.png')) # Easy
         time.sleep(0.3)
         pg.click(getPosOf('./images/main/standard.png')) # Standard
-    time.sleep(5.2)
+        time.sleep(3)
+        darkCastle()
     return True
 
 def restartGame():
@@ -68,6 +70,7 @@ def restartGame():
             break
 
 def darkCastle():
+    time.sleep(2.2)
     obynBox = getPosOf('./images/maps/dark_castle/obynLocation.png', 0.5)
     dartBox = getPosOf('./images/maps/dark_castle/dartLocation.png', 0.5)
     subBox = getPosOf('./images/maps/dark_castle/subLocation.png', 0.4)
