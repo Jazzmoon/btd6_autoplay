@@ -11,7 +11,7 @@ def moveToRest(delay=27):
     for i in range(delay):
         pg.click()
         pg.click()
-        #press('1')
+        press('1')
         time.sleep(1)
 
 def getPosOf(image, conf=0.3):
@@ -52,7 +52,7 @@ def restartGame():
             time.sleep(1.3)
             pg.click(getPosOf('./images/restart/menu.png')) # Menu
             time.sleep(0.5)
-            pg.click(getPosOf('./images/restart/restart.png')) # Restart
+            pg.click(getPosOf('./images/restart/restart.png'), 0.5) # Restart
             time.sleep(0.5)
             pg.click(getPosOf('./images/restart/confirm.png')) # Confirm
             time.sleep(5)
@@ -169,7 +169,7 @@ def darkCastle():
     time.sleep(0.2)
     # Upgrade Done
 
-    moveToRest(179)
+    moveToRest(140)
 
     # End Game
     restartGame()
