@@ -3,14 +3,12 @@ import time, sys
 
 sW, sH = pg.size()
 
-xPosResting, yPosResting = 1500, 1000
-
 def press(key):
     pg.press(key)
     pass
 
 def moveToRest(delay=27):
-    pg.moveTo(xPosResting, yPosResting)
+    pg.moveTo(sW / 2, sH / 2)
     for i in range(delay):
         levelUpCheck()
         pg.click()
@@ -18,37 +16,46 @@ def moveToRest(delay=27):
         time.sleep(1)
     pass
 
+def getPosOf(image):
+    location = pg.locateOnScreen(image, confidence=0.3)
+
+    if location == None return None
+
+    locationCenter = pg.center(location)
+
+    return locationCenter
+
 def startUp(preset='darkCastle'):
-    pg.click(800, 900) # Play
-    time.sleep(0.5)
+    pg.click(getPosOf('./images/main/play.png')) # Play
+    time.sleep(0.3)
     if preset == 'darkCastle':
-        pg.click(1400, 950) # Expert
-        time.sleep(0.5)
-        pg.click(1500, 600) # Dark castle
-        time.sleep(0.5)
-        pg.click(550, 400) # Easy
-        time.sleep(0.5)
-        pg.click(550, 600) # Standard
+        pg.click(getPosOf('./images/main/expert.png')) # Expert
+        time.sleep(0.3)
+        pg.click(getPosOf('./images/maps/dark_castle/playCard.png')) # Dark castle
+        time.sleep(0.3)
+        pg.click(getPosOf('./images/main/easy.png')) # Easy
+        time.sleep(0.3)
+        pg.click(getPosOf('./images/main/standard.png')) # Standard
     time.sleep(5.2)
     return True
 
 def restartGame():
     while True:
         time.sleep(2)
-        locationOfNext = pg.locateOnScreen('./images/next.png', confidence=0.3)
+        locationOfNext = getPosOf('./images/restart/next.png')
 
         if  locationOfNext != None:
-            pg.click(960, 911) # Next
+            pg.click(locationOfNext) # Next
             time.sleep(0.5)
-            pg.click(1150, 911) # Freeplay
+            pg.click(getPosOf('./images/restart/freeplay.png')) # Freeplay
             time.sleep(0.7)
-            pg.click(980, 770) # Okay
+            pg.click(getPosOf('./images/restart/ok.png')) # Okay
             time.sleep(1.3)
-            pg.click(1585, 45) # Menu
+            pg.click(getPosOf('./images/restart/menu.png')) # Menu
             time.sleep(0.5)
-            pg.click(1100, 911) # Restart
+            pg.click(getPosOf('./images/restart/restart.png')) # Restart
             time.sleep(0.5)
-            pg.click(1180, 760) # Confirm
+            pg.click(getPosOf('./images/restart/confirm.png')) # Confirm
             time.sleep(5)
             darkCastle()
             break
@@ -66,6 +73,10 @@ def levelUpCheck():
     pass
 
 def darkCastle():
+
+    obynLocation = getPosOf('./images/maps/dark_castle/obynLocation.png')
+    dartLocation = getPosOf('./images/maps/dark_castle/dartLocation.png')
+    subLocation = getPosOf('./images/maps/dark_castle/subLocation.png')
     time.sleep(0.5)
     press('space')
     time.sleep(0.1)
@@ -77,7 +88,7 @@ def darkCastle():
     levelUpCheck()
     time.sleep(0.1)
     levelUpCheck()
-    pg.moveTo(549, 617)
+    pg.moveTo(obynLocation)
     levelUpCheck()
     pg.click()
     levelUpCheck()
@@ -91,7 +102,7 @@ def darkCastle():
     levelUpCheck()
     time.sleep(0.1)
     levelUpCheck()
-    pg.moveTo(549, 489)
+    pg.moveTo(dartLocation)
     levelUpCheck()
     pg.click()
     levelUpCheck()
@@ -119,7 +130,7 @@ def darkCastle():
     # Sub
     press('x')
     levelUpCheck()
-    pg.moveTo(1085, 409)
+    pg.moveTo(subLocation)
     levelUpCheck()
     pg.click()
     levelUpCheck()
@@ -130,7 +141,7 @@ def darkCastle():
     levelUpCheck()
 
     # Upgrade Sub: 2-0-0
-    pg.moveTo(1085, 409)
+    pg.moveTo(subLocation)
     levelUpCheck()
     pg.click()
     levelUpCheck()
@@ -148,7 +159,7 @@ def darkCastle():
     levelUpCheck()
 
     # Upgrade Sub: 2-0-1
-    pg.moveTo(1085, 409)
+    pg.moveTo(subLocation)
     levelUpCheck()
     pg.click()
     levelUpCheck()
@@ -164,7 +175,7 @@ def darkCastle():
     levelUpCheck()
 
     # Upgrade Sub: 2-0-2
-    pg.moveTo(1085, 409)
+    pg.moveTo(subLocation)
     levelUpCheck()
     pg.click()
     levelUpCheck()
@@ -180,7 +191,7 @@ def darkCastle():
     levelUpCheck()
 
     # Upgrade Sub: 2-0-3
-    pg.moveTo(1085, 409)
+    pg.moveTo(subLocation)
     levelUpCheck()
     pg.click()
     levelUpCheck()
@@ -196,7 +207,7 @@ def darkCastle():
     levelUpCheck()
 
     # Upgrade Sub 2-0-4
-    pg.moveTo(1085, 409)
+    pg.moveTo(subLocation)
     levelUpCheck()
     pg.click()
     levelUpCheck()
@@ -214,5 +225,3 @@ def darkCastle():
     # End Game
     restartGame()
     pass
-
-startUp(preset='darkCastle')
