@@ -3,6 +3,12 @@
 ## Usage
 
 This requires games to be played in fullscreen with auto-start to work.
+Additionally, this is designed to work for those who have upgrades including:
+
+- Free Dart Monkey
+- Additional $200 starting cash
+- Half of 1st Military Monkey
+- Military Monkey Upgrade Discounts
 
 In addition to Python3 or higher, you will need to run the following code in a terminal:
 
