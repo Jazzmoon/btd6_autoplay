@@ -1,0 +1,30 @@
+{
+    "delays": {
+        "obynToDart": 0.1,
+        "dartToDartUpgrade": 15,
+        "dartUpgradeToSub": 15,
+        "subToSubUpgrade.2-0-0": 28,
+        "subToSubUpgrade.2-0-1": 27,
+        "subToSubUpgrade.2-0-2": 25,
+        "subToSubUpgrade.2-0-3": 52,
+        "subToSubUpgrade.2-0-4": 10,
+        "optionals": {
+            "sub.2-0-4ToDartUpgrade.0-2-3": 15,
+            "dart.0-2-3ToDartUpgrade.0-2-4": 15
+        },
+        "waitTillEnd": 80
+    },
+    "optionalUpgrades": {
+        "dart0-2-3": true,
+        "dart0-2-4": true
+    },
+    "tolerences": {
+        "obyn": 0.46,
+        "dart": 0.46,
+        "sub": 0.45
+    },
+    "restartConfirmButtonLocation": {
+        "x": 1140,
+        "y": 732
+    }
+}

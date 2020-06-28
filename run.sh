@@ -1,0 +1,1 @@
+python -i ./btd6.py
