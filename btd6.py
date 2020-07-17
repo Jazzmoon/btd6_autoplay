@@ -20,7 +20,6 @@ def inGameScreen():
     system('cls' if name == 'nt' else "printf '\033c'")
     print(f'BTD6 Auto Play. Created by Team Jazzmoon | Use Ctrl + C then exit() to quit the script\nWins: {wins}\nLosses: {loss}\nGames Played: {gamesPlayed}\n------------------\nCurrent Game Logs\n------------------')
 
-
 def moveToRest(delay=27):
     sW, sH = size()
     moveTo(sW / 2, sH / 2)
@@ -48,7 +47,7 @@ def startUp(preset='darkCastle'):
         sleep(0.3)
         click(getPosOf('./images/main/easy.png')) # Easy
         sleep(0.3)
-        click(getPosOf('./images/main/standard.png')) # Standard
+        click(getPosOf('./images/main/standard.png', 0.4)) # Standard
         sleep(3)
         darkCastle()
     return True
@@ -81,7 +80,7 @@ def restartGame():
             sleep(0.5)
             click(getPosOf('./images/restart/restart.png')) # Restart
             sleep(0.5)
-            click(settings['restartConfirmButtonLocation']['y'], settings['restartConfirmButtonLocation']['y']) # Confirm
+            click(settings['restartConfirmButtonLocation']['x'], settings['restartConfirmButtonLocation']['y']) # Confirm
             sleep(1)
             loss += 1 ; gamesPlayed += 1
             darkCastle()
@@ -89,19 +88,16 @@ def restartGame():
 
 def darkCastle():
     inGameScreen()
-    moveToRest(1)
-
-    obynBox = getPosOf('./images/maps/dark_castle/obynLocation.png', settings['tolerences']['obyn']) ; obynLocation = [obynBox[0], obynBox[1]]
-    dartBox = getPosOf('./images/maps/dark_castle/dartLocation.png', settings['tolerences']['dart']) ; dartLocation = [dartBox[0], dartBox[1]]
-    subBox = getPosOf('./images/maps/dark_castle/subLocation.png', settings['tolerences']['sub']) ; subLocation = [subBox[0], subBox[1]]
-
+    sleep(1)
+    obynBox = getPosOf('./images/maps/dark_castle/obynLocation.png', settings['tolerances']['obyn']) ; obynLocation = [obynBox[0], obynBox[1]]
+    dartBox = getPosOf('./images/maps/dark_castle/dartLocation.png', settings['tolerances']['dart']) ; dartLocation = [dartBox[0], dartBox[1]]
+    subBox = getPosOf('./images/maps/dark_castle/subLocation.png', settings['tolerances']['sub']) ; subLocation = [subBox[0], subBox[1]]
     # Start Game
     sleep(0.5)
     press('space')
     sleep(0.1)
     press('space')
     # Start Game Done
-
     # Obyn
     print('Obyn: Place')
     press('u')
@@ -109,9 +105,7 @@ def darkCastle():
     moveTo(obynLocation)
     click()
     # Obyn Done
-
     sleep(settings['delays']['obynToDart'])
-
     # Dart Monkey
     print('Dart: Place')
     press('q')
@@ -119,9 +113,7 @@ def darkCastle():
     moveTo(dartLocation)
     click()
     # Dart Done
-
     sleep(settings['delays']['dartToDartUpgrade'])
-
     # Upgrade Dart: 0-0-2
     print('Dart: Upgrade | 0-0-2')
     click()
@@ -130,18 +122,14 @@ def darkCastle():
     press('/')
     sleep(0.2)
     # Upgrade Done
-
     moveToRest(settings['delays']['dartUpgradeToSub'])
-
     # Sub
     print('Sub: Place')
     press('x')
     moveTo(subLocation)
     click()
     # Sub Done
-
     moveToRest(settings['delays']['subToSubUpgrade.2-0-0'])
-
     # Upgrade Sub: 2-0-0
     print('Sub: Upgrade | 2-0-0')
     moveTo(subLocation)
@@ -151,9 +139,7 @@ def darkCastle():
     press(',')
     sleep(0.2)
     # Upgrade Done
-
     moveToRest(settings['delays']['subToSubUpgrade.2-0-1'])
-
     # Upgrade Sub: 2-0-1
     print('Sub: Upgrade | 2-0-1')
     moveTo(subLocation)
@@ -162,9 +148,7 @@ def darkCastle():
     press('/')
     sleep(0.2)
     # Upgrade Done
-
     moveToRest(settings['delays']['subToSubUpgrade.2-0-2'])
-
     # Upgrade Sub: 2-0-2
     print('Sub: Upgrade | 2-0-2')
     moveTo(subLocation)
@@ -173,9 +157,7 @@ def darkCastle():
     press('/')
     sleep(0.2)
     # Upgrade Done
-
     moveToRest(settings['delays']['subToSubUpgrade.2-0-3'])
-
     # Upgrade Sub: 2-0-3
     print('Sub: Upgrade | 2-0-3')
     moveTo(subLocation)
@@ -184,9 +166,7 @@ def darkCastle():
     press('/')
     sleep(0.2)
     # Upgrade Done
-
     moveToRest(settings['delays']['subToSubUpgrade.2-0-4'])
-
     # Upgrade Sub 2-0-4
     print('Sub: Upgrade | 2-0-4')
     moveTo(subLocation)
@@ -195,10 +175,8 @@ def darkCastle():
     press('/')
     sleep(0.2)
     # Upgrade Done
-
     if settings['optionalUpgrades']['dart0-2-3']:
         moveToRest(settings['delays']['optionals']['sub.2-0-4ToDartUpgrade.0-2-3'])
-
         # Upgrade Dart 0-2-3
         print('Dart: Upgrade | 0-2-3')
         moveTo(dartLocation)
@@ -209,10 +187,8 @@ def darkCastle():
         press('/')
         sleep(0.2)
         # Upgrade Done
-
         if settings['optionalUpgrades']['dart0-2-4']:
             moveToRest(settings['delays']['optionals']['dart.0-2-3ToDartUpgrade.0-2-4'])
-
             # Upgrade Dart 0-2-3
             print('Dart: Upgrade | 0-2-4')
             moveTo(dartLocation)
@@ -221,12 +197,9 @@ def darkCastle():
             press('/')
             sleep(0.2)
             # Upgrade Done
-
     moveToRest(settings['delays']['waitTillEnd'])
-
     # End Game
     restartGame()
-
 
 def introScreen():
     system('cls' if name == 'nt' else "printf '\033c'")
@@ -241,6 +214,5 @@ def introScreen():
         else:
             system('cls' if name == 'nt' else "printf '\033c'")
             print('BTD6 Auto Play. Created by Team Jazzmoon | Use Ctrl + C then exit() to quit the script')
-
 
 introScreen()
