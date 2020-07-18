@@ -23,7 +23,7 @@ settings['delays']['waitTillEnd'] += settings['delays']['optionals']['sub.2-0-4T
 def inGameScreen():
         system('cls' if name == 'nt' else "printf '\033c'")
         print(
-            f'BTD6 Auto Play. Created by Team Jazzmoon | Use Ctrl + C then exit() to quit the script\nWins: {self.wins}\nLosses: {loss}\nGames Played: {self.gamesPlayed}\n------------------\nCurrent Game Logs\n------------------')
+            f'BTD6 Auto Play. Created by Team Jazzmoon | Use Ctrl + C then exit() to quit the script\nWins: {wins}\nLosses: {loss}\nGames Played: {gamesPlayed}\n------------------\nCurrent Game Logs\n------------------')
 
 def introScreen():
     system('cls' if name == 'nt' else "printf '\033c'")
@@ -61,7 +61,7 @@ def startUp(preset='darkCastle'):
         click(getPosOf('./images/main/easy.png')) # Easy
         sleep(0.3)
         click(getPosOf('./images/main/standard.png', 0.4)) # Standard
-        sleep(3)
+        sleep(5)
         darkCastle()
     return True
 
