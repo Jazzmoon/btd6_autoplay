@@ -6,7 +6,7 @@ class Tower:
         self.hotkey = hotkey
         self.pos = self.getPos(image, conf)
         self.name = name
-        self.path = [0,0,0]
+        self.path = ['0','0','0']
 
     def getPos(self, image, conf=0.3):
         location = locateOnScreen(image, confidence=conf)
@@ -28,16 +28,17 @@ class Tower:
         click()
         sleep(0.2)
 
-    def upgrade(self, path):
+    def upgrade(self, path, times=1):
         if path == ',':
-            self.path[0] += 1
+            self.path[0] = str(int(self.path[0]) + times)
         elif path == '.':
-            self.path[1] += 1
+            self.path[1] = str(int(self.path[1]) + times)
         elif path == '/':
-            self.path[2] += 1
-        print(f"{self.name}: Upgrade | {'|'.join(self.path)}")
+            self.path[2] = str(int(self.path[2]) + times)
+        print(f"{self.name}: Upgrade | {'-'.join(self.path)}")
         moveTo(self.pos)
         click()
         sleep(0.2)
-        press(path)
-        sleep(0.2)
+        for i in range(times):
+            press(path)
+            sleep(0.2)

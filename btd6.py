@@ -119,8 +119,7 @@ def darkCastle():
     # Dart Done
     sleep(settings['delays']['dartToDartUpgrade'])
     # Upgrade Dart: 0-0-2
-    dart.upgrade('/')
-    dart.upgrade('/')
+    dart.upgrade('/', 2)
     # Upgrade Done
     game.moveToRest(settings['delays']['dartUpgradeToSub'])
     # Sub
@@ -128,7 +127,7 @@ def darkCastle():
     # Sub Done
     game.moveToRest(settings['delays']['subToSubUpgrade.2-0-0'])
     # Upgrade Sub: 2-0-0
-    sub.upgrade(',')
+    sub.upgrade(',', 2)
     # Upgrade Done
     game.moveToRest(settings['delays']['subToSubUpgrade.2-0-1'])
     # Upgrade Sub: 2-0-1
@@ -149,8 +148,7 @@ def darkCastle():
     if settings['optionalUpgrades']['dart0-2-3']:
         game.moveToRest(settings['delays']['optionals']['sub.2-0-4ToDartUpgrade.0-2-3'])
         # Upgrade Dart 0-2-3
-        dart.upgrade('.')
-        dart.upgrade('.')
+        dart.upgrade('.', 2)
         dart.upgrade('/')
         # Upgrade Done
         if settings['optionalUpgrades']['dart0-2-4']:
