@@ -3,16 +3,16 @@
         "obynToDart": 0.1,
         "dartToDartUpgrade": 1,
         "dartUpgradeToSub": 10,
-        "subToSubUpgrade.2-0-0": 15,
-        "subToSubUpgrade.2-0-1": 27,
-        "subToSubUpgrade.2-0-2": 28,
-        "subToSubUpgrade.2-0-3": 35,
-        "subToSubUpgrade.2-0-4": 40,
+        "subToSubUpgrade.2-0-0": 27,
+        "subToSubUpgrade.2-0-1": 30,
+        "subToSubUpgrade.2-0-2": 35,
+        "subToSubUpgrade.2-0-3": 40,
+        "subToSubUpgrade.2-0-4": 58,
         "optionals": {
             "sub.2-0-4ToDartUpgrade.0-2-3": 27,
-            "dart.0-2-3ToDartUpgrade.0-2-4": 6
+            "dart.0-2-3ToDartUpgrade.0-2-4": 7
         },
-        "waitTillEnd": 63
+        "waitTillEnd": 59
     },
     "optionalUpgrades": {
         "dart0-2-3": true,
