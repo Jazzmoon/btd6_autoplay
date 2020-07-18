@@ -18,7 +18,7 @@
         "dart0-2-3": true,
         "dart0-2-4": true
     },
-    "tolerences": {
+    "tolerances": {
         "obyn": 0.46,
         "dart": 0.46,
         "sub": 0.45
