@@ -1,18 +1,18 @@
 {
     "delays": {
         "obynToDart": 0.1,
-        "dartToDartUpgrade": 15,
-        "dartUpgradeToSub": 15,
-        "subToSubUpgrade.2-0-0": 28,
+        "dartToDartUpgrade": 1,
+        "dartUpgradeToSub": 10,
+        "subToSubUpgrade.2-0-0": 15,
         "subToSubUpgrade.2-0-1": 27,
-        "subToSubUpgrade.2-0-2": 25,
-        "subToSubUpgrade.2-0-3": 52,
-        "subToSubUpgrade.2-0-4": 10,
+        "subToSubUpgrade.2-0-2": 28,
+        "subToSubUpgrade.2-0-3": 35,
+        "subToSubUpgrade.2-0-4": 40,
         "optionals": {
-            "sub.2-0-4ToDartUpgrade.0-2-3": 15,
-            "dart.0-2-3ToDartUpgrade.0-2-4": 15
+            "sub.2-0-4ToDartUpgrade.0-2-3": 27,
+            "dart.0-2-3ToDartUpgrade.0-2-4": 6
         },
-        "waitTillEnd": 80
+        "waitTillEnd": 63
     },
     "optionalUpgrades": {
         "dart0-2-3": true,

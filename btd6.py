@@ -149,6 +149,7 @@ def darkCastle():
         game.moveToRest(settings['delays']['optionals']['sub.2-0-4ToDartUpgrade.0-2-3'])
         # Upgrade Dart 0-2-3
         dart.upgrade('.', 2)
+        sleep(0.5)
         dart.upgrade('/')
         # Upgrade Done
         if settings['optionalUpgrades']['dart0-2-4']:
