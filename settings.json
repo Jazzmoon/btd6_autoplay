@@ -25,6 +25,27 @@
             "sub": 0.45
         }
     },
+    "logs": {
+        "positions": {
+            "obyn": [475, 460],
+            "dart": [350,460],
+            "ninja": [475,525]
+        },
+        "delays": {
+            "obynToDart": 0.1,
+            "dartUpgrade.0-0-2": 1,
+            "dartUpgradeToNinja": 21,
+            "ninjaUpgrade.0-0-1": 25,
+            "ninjaUpgrade.1-0-1": 14,
+            "ninjaUpgrade.2-0-1": 14,
+            "ninjaUpgrade.3-0-1": 14,
+            "ninjaUpgrade.4-0-1": 35,
+            "ninjaUpgrade.4-0-2": 11,
+            "dartUpgrade.2-0-2": 10,
+            "dartUpgrade.2-0-4": 15,
+            "waitTillEnd": 42
+        }
+    },
     "restartConfirmButtonLocation": {
         "x": 1140,
         "y": 732

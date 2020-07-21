@@ -1,0 +1,4 @@
+./.vscode
+./__pycache__
+./src/classes/__pycache__
+./src/maps/__pycache__
