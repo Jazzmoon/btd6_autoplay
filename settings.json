@@ -1,30 +1,39 @@
 {
-    "delays": {
-        "obynToDart": 0.1,
-        "dartToDartUpgrade": 1,
-        "dartUpgradeToSub": 10,
-        "subToSubUpgrade.2-0-0": 27,
-        "subToSubUpgrade.2-0-1": 30,
-        "subToSubUpgrade.2-0-2": 35,
-        "subToSubUpgrade.2-0-3": 40,
-        "subToSubUpgrade.2-0-4": 58,
-        "optionals": {
-            "sub.2-0-4ToDartUpgrade.0-2-3": 27,
-            "dart.0-2-3ToDartUpgrade.0-2-4": 7
+    "darkcastle": {
+        "delays": {
+            "obynToDart": 0.1,
+            "dartToDartUpgrade.0-0-2": 1,
+            "dartUpgradeToSub": 10,
+            "subToSubUpgrade.2-0-0": 27,
+            "subToSubUpgrade.2-0-1": 30,
+            "subToSubUpgrade.2-0-2": 35,
+            "subToSubUpgrade.2-0-3": 41,
+            "subToSubUpgrade.2-0-4": 42,
+            "optionals": {
+                "sub.2-0-4ToDartUpgrade.x-x-3": 27,
+                "dart.x-x-3ToDartUpgrade.x-x-4": 7
+            },
+            "waitTillEnd": 42
         },
-        "waitTillEnd": 59
-    },
-    "optionalUpgrades": {
-        "dart0-2-3": true,
-        "dart0-2-4": true
-    },
-    "tolerances": {
-        "obyn": 0.46,
-        "dart": 0.46,
-        "sub": 0.45
+        "optionalUpgrades": {
+            "dart.x-x-3": true,
+            "dart.x-x-4": true
+        },
+        "tolerances": {
+            "obyn": 0.46,
+            "dart": 0.46,
+            "sub": 0.45
+        }
     },
     "restartConfirmButtonLocation": {
         "x": 1140,
         "y": 732
+    },
+    "progressBar": {
+        "prefix": "Progress: [",
+        "suffix": "] [PERCENT]%",
+        "completed": "#",
+        "null": "-"
+
     }
 }

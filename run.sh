@@ -1,1 +1,1 @@
-python -i ./btd6.py
+python -i ./src/__main__.py
