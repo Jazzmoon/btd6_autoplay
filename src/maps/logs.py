@@ -25,5 +25,11 @@ def mapLoop(game, settings):
     ninja.upgrade(',')
     game.moveToRest(settings['delays']['ninjaUpgrade.4-0-1'])
     ninja.upgrade(',')
+    game.moveToRest(settings['delays']['ninjaUpgrade.4-0-2'])
+    ninja.upgrade('/')
+    game.moveToRest(settings['delays']['dartUpgrade.2-0-2'])
+    dart.upgrade(',', 2)
+    game.moveToRest(settings['delays']['dartUpgrade.2-0-4'])
+    dart.upgrade('/', 2)
     game.moveToRest(settings['delays']['waitTillEnd'])
     # End Game

@@ -35,15 +35,15 @@
             "obynToDart": 0.1,
             "dartUpgrade.0-0-2": 1,
             "dartUpgradeToNinja": 21,
-            "ninjaUpgrade.0-0-1": 25,
-            "ninjaUpgrade.1-0-1": 14,
-            "ninjaUpgrade.2-0-1": 14,
-            "ninjaUpgrade.3-0-1": 14,
-            "ninjaUpgrade.4-0-1": 35,
-            "ninjaUpgrade.4-0-2": 11,
-            "dartUpgrade.2-0-2": 10,
-            "dartUpgrade.2-0-4": 15,
-            "waitTillEnd": 42
+            "ninjaUpgrade.0-0-1": 11,
+            "ninjaUpgrade.1-0-1": 11,
+            "ninjaUpgrade.2-0-1": 11,
+            "ninjaUpgrade.3-0-1": 32,
+            "ninjaUpgrade.4-0-1": 41,
+            "ninjaUpgrade.4-0-2": 27,
+            "dartUpgrade.2-0-2": 6,
+            "dartUpgrade.2-0-4": 11,
+            "waitTillEnd": 97
         }
     },
     "restartConfirmButtonLocation": {
