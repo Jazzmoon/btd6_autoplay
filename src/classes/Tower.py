@@ -17,6 +17,7 @@ class Tower:
 
     def print(self, text):
         print(f'{" " * (gts().columns - 5)}\r\033[A{text}\n')
+        return self
 
     def getPos(self, image, conf=0.3):
         location = locateOnScreen(image, confidence=conf)
@@ -31,17 +32,20 @@ class Tower:
         sleep(0.1)
         moveTo(self.pos)
         click()
+        return self
 
     def select(self):
         self.print(f'{self.name}: Select')
         moveTo(self.pos)
         click()
-        sleep(0.2)
+        sleep(0.2)                    
+        return self
 
     def deselect(self):
         sW, sH = size()
         moveTo(sW / 2, sH / 2)
         click()
+        return self
 
     def upgrade(self, path, times=1):
         if path == ',':
@@ -58,3 +62,4 @@ class Tower:
             press(path)
             sleep(0.2)
         self.deselect()
+        return self
