@@ -57,7 +57,7 @@ class Console:
 
         print(f"{termColor.BLUE} ____ _______ _____    __    ____   ____ _______ \n|  _ \__   __|  __ \  / /   |  _ \ / __ \__   __|\n| |_) | | |  | |  | |/ /_   | |_) | |  | | | |   \n|  _ <  | |  | |  | | '_ \  |  _ <| |  | | | |   \n| |_) | | |  | |__| | (_) | | |_) | |__| | | |   \n|____/  |_|  |_____/ \___/  |____/ \____/  |_|")
 
-        print(f"\n{termColor.DEFAULT}BTD6 Auto Play. Created by Team Jazzmoon | Use Ctrl + C then exit() to quit the script\n{self.screen_bar()}")
+        print(f"\n{termColor.DEFAULT}BTD6 Auto Play. Created by Team Jazzmoon | Use Ctrl + C to quit the script\n{self.screen_bar()}")
 
 
     def show_stats(self):

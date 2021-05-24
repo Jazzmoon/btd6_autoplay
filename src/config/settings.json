@@ -1,7 +1,7 @@
 {
     "tesseractPath": "C:\\Users\\User\\AppData\\Local\\Programs\\Tesseract-OCR\\tesseract.exe",
     "game": {
-        "startHotkey": "backspace",
+        "startHotkey": "space",
         "menuHotkey": "esc",
         "sellHotkey": "backspace",
         "upgradeTopPathHotkey": ",",
