@@ -12,7 +12,7 @@ Additionally, this is designed to work for those who have upgrades including:
 
 You don't need these upgrades if you change the timing.
 
-In addition to Python 3.8 (due to our use of the `:=` operator in Console.py on line 37), you will need to run the following code in a terminal:
+In addition to Python 3.8 (due to our use of the `:=` operator), you will need to run the following code in a terminal:
 
 ```bash
 pip install -r requirements.txt # Install requirements for the script
@@ -29,6 +29,4 @@ We have a JSON file now being read with all of the timings and settings for the 
 
 ## Custom Maps
 
-We made the new class system to make sure that anyone can make their own maps. Simply import the Tower class using `from classes.Tower import Tower` and follow the `darkcastle.py` example we have already made.
-
-If you have made a reliable map, feel free to make a pull request and we will review it and potentially add it to the maps folder. Hopefully, every map in the game will have a loop at some point.
+See `logs.json` for example game map.
