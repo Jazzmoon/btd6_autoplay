@@ -164,4 +164,8 @@ Thumbs.db
 .history
 .ionide
 
+### CUSTOM ###
+old/
+old/*
+
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode
