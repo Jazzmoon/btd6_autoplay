@@ -1,0 +1,14 @@
+{
+    "game": {
+        "menu": [1600, 40],
+        "restart_game": [1080, 845],
+        "restart_confirm": [1140, 732],
+        "home": [845, 860]
+    },
+    "progressBar": {
+        "prefix": "Progress: [",
+        "suffix": "] [PERCENT]%",
+        "completed": "#",
+        "null": "-"
+    }
+}
