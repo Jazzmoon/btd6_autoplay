@@ -1,0 +1,28 @@
+{
+    "tesseractPath": "C:\\Users\\User\\AppData\\Local\\Programs\\Tesseract-OCR\\tesseract.exe",
+    "game": {
+        // Hotkeys
+        "startHotkey": "backspace",
+        "menuHotkey": "esc",
+        "sellHotkey": "backspace",
+        "upgradeTopPathHotkey": ",",
+        "upgradeMiddlePathHotkey": ".",
+        "upgradeBottomPathHotkey": "/",
+        // Coords
+        "victoryBanner": [700, 120, 515, 110],
+        "defeatBanner": [590, 140, 730, 115],
+        "nextButton": [965, 920],
+        "freeplay": [1120, 855],
+        "freeplayOk": [965, 765],
+        "restartGame": [1080, 845],
+        "confirm": [1140, 730],
+        "home": [845, 860],
+        "roundCounter": [1380, 30, 180, 45]
+    },
+    "progressBar": {
+        "prefix": "Progress: [",
+        "suffix": "] [PERCENT]%",
+        "completed": "#",
+        "null": "-"
+    }
+}

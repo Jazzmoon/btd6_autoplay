@@ -3,17 +3,17 @@
       "obyn": {
         "hotkey": "u",
         "coords": [400, 500],
-        "properName": "Obyn"
+        "name": "Obyn"
       },
       "dart": {
         "hotkey": "q",
         "coords": [400, 500],
-        "properName": "Dart Monkey"
+        "name": "Dart Monkey"
       },
       "sub": {
         "hotkey": "x",
         "coords": [400, 500],
-        "properName": "Monkey Sub"
+        "name": "Monkey Sub"
       }
     },
     "instructions": {
@@ -22,7 +22,8 @@
         "place obyn",
         "place dart",
         "sleep 1",
-        "upgrade dart 0-0-2"
+        "upgrade dart 0-0-2",
+        "ability 2"
       ],
       "2": ["place sub", "sleep 10", "upgrade sub 2-0-0"],
       "5": ["upgrade sub 2-0-1"],

@@ -31,11 +31,4 @@ We have a JSON file now being read with all of the timings and settings for the 
 
 We made the new class system to make sure that anyone can make their own maps. Simply import the Tower class using `from classes.Tower import Tower` and follow the `darkcastle.py` example we have already made.
 
-New Tower Example Code:
-
-```python3
-hero = Tower(hotkey='u', image='./images/maps/dark_castle/obynLocation.png', conf=settings['tolerances']['obyn'], name="Obyn")
-dart = Tower(hotkey='q', image='./images/maps/dark_castle/dartLocation.png', conf=settings['tolerances']['dart'], name="Dart")
-```
-
 If you have made a reliable map, feel free to make a pull request and we will review it and potentially add it to the maps folder. Hopefully, every map in the game will have a loop at some point.
