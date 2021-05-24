@@ -35,24 +35,21 @@ try:
     with open(os.path.join(OS_PATH, f"config/maps/{mapName}.json"), 'r') as map_json:
         map_settings = load(map_json)
 
-    #sleep(2)
+    sleep(2)
 
-    game = Game(settings, map_settings, console)
-    print(game.get_text(True))
+    while True:
+        console.welcome_screen()
+        console.show_stats()
+        console.print_new_lines(2)
+        game = Game(settings, map_settings, console)
 
-    # while True:
-    #     console.welcome_screen()
-    #     console.show_stats()
-    #     console.print_new_lines(2)
-    #     game = Game(settings, map_settings, console)
+        gameResult = game.start()
 
-    #     gameResult = game.start()
-
-    #     if gameResult == True:
-    #         console.wins += 1
-    #     else:
-    #         console.loss += 1
-    #     console.gamesPlayed += 1
+        if gameResult == True:
+            console.wins += 1
+        else:
+            console.loss += 1
+        console.gamesPlayed += 1
 
 except KeyboardInterrupt:
     exit()
