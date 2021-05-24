@@ -38,7 +38,7 @@ class Tower:
         self.print(f'{self.name}: Select')
         moveTo(self.pos)
         click()
-        sleep(0.2)                    
+        sleep(0.2)
         return self
 
     def deselect(self):
@@ -58,8 +58,14 @@ class Tower:
         moveTo(self.pos)
         click()
         sleep(0.2)
-        for i in range(times):
+        for _ in range(times):
             press(path)
             sleep(0.2)
         self.deselect()
+        return self
+
+    def ability(self, ability):
+        self.print(f'{self.name}: Use Ability | {ability}')
+        press(ability)
+        sleep(0.2)
         return self
