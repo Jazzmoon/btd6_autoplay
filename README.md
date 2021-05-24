@@ -12,17 +12,15 @@ Additionally, this is designed to work for those who have upgrades including:
 
 You don't need these upgrades if you change the timing.
 
-In addition to Python 3.8 (due to our use of the := operator in Console.py on line 37), you will need to run the following code in a terminal:
+In addition to Python 3.8 (due to our use of the `:=` operator in Console.py on line 37), you will need to run the following code in a terminal:
 
 ```bash
 pip install -r requirements.txt # Install requirements for the script
 ```
 
-Note: Python 3.9 doesn't have a working opencv-python extension at the moment, so do not update.
-
 - To begin the Dark Castle game loop, open the game to the main screen and select Obyn as your hero.
 - Next, open a terminal and use `cd` to navigate to the script locations.
-- In terminal, run `run.bat` or `run.sh` depending on your os.
+- In terminal, run `scripts/run.*`, where the extension depending on your os.
 - Once in python interactive terminal, follow on screen instructions. Make sure you type name of map as found in maps folder. (.py extension is not needed)
 
 ## Settings
