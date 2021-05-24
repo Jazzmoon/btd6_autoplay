@@ -99,7 +99,7 @@ class Game:
         if (use_grab):
             image = ImageGrab.grab(bbox=[x, y, x+width, y+height])
 
-            if colorFilter == 'gold':
+            if colorFilter == "gold":
                 image_data = image.getdata()
                 new_image_data = []
 
@@ -110,7 +110,7 @@ class Game:
                         new_image_data.append((0,0,0))
                 image.putdata(new_image_data)
 
-            elif colorFilter == 'red':
+            elif colorFilter == "red":
                 image_data = image.getdata()
                 new_image_data = []
 

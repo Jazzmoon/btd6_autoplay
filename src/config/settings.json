@@ -1,15 +1,13 @@
 {
     "tesseractPath": "C:\\Users\\User\\AppData\\Local\\Programs\\Tesseract-OCR\\tesseract.exe",
     "game": {
-        // Hotkeys
-        "startHotkey": "backspace",
+        "startHotkey": "backspace", // Hotkeys
         "menuHotkey": "esc",
         "sellHotkey": "backspace",
         "upgradeTopPathHotkey": ",",
         "upgradeMiddlePathHotkey": ".",
         "upgradeBottomPathHotkey": "/",
-        // Coords
-        "victoryBanner": [700, 120, 515, 110],
+        "victoryBanner": [700, 120, 515, 110], // Coords
         "defeatBanner": [590, 140, 730, 115],
         "nextButton": [965, 920],
         "freeplay": [1120, 855],
