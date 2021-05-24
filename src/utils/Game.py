@@ -61,20 +61,21 @@ class Game:
         return self.restart_game()
 
     def restart_game(self) -> bool:
-        while (result := (self.get_text(True), self.get_text(False))) not in ("VICTORY", "GAME OVER"):
+        while "VICTORY" not in (result := (self.get_text(True), self.get_text(False))) and \
+                "GAME OVER" not in result:
             sleep(5)
-        pygui.click(self.settings["game"]["next"])
-        sleep(0.1)
+        pygui.click(self.settings["game"]["nextButton"])
+        sleep(0.25)
         pygui.click(self.settings["game"]["freeplay"])
-        sleep(0.1)
+        sleep(1)
         pygui.click(self.settings["game"]["freeplayOk"])
-        sleep(0.1)
+        sleep(0.2)
         pygui.press(self.settings["game"]["menuHotkey"])
-        sleep(0.1)
+        sleep(0.2)
         pygui.click(self.settings["game"]["restartGame"])
-        sleep(0.1)
+        sleep(0.2)
         pygui.click(self.settings["game"]["confirm"])
-        return result == "VICTORY"
+        return "VICTORY" in result
 
     ### GET ROUND USING PYTESSERACT ###
     def get_round(self) -> str:
