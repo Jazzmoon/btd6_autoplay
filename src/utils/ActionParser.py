@@ -23,6 +23,8 @@ class ActionParser:
             self.sell_tower(stringArray[1])
         elif stringArray[0] == "ability":
             self.use_ability(stringArray[1])
+        elif stringArray[0] == "obstacle":
+            self.clear_obstacle(stringArray[1], stringArray[2])
         elif stringArray[0] == "click":
             self.move_mouse(stringArray[1], stringArray[2], click=True)
         elif stringArray[0] == "hover":
@@ -43,10 +45,20 @@ class ActionParser:
 
     def sell_tower(self, towerName: str):
         self.find_tower(towerName).sell()
-        pass
 
     def use_ability(self, ability: str):
-        self.game.press_keys(ability)
+        self.press_keys(ability)
+
+    def use_ability(self, obstacle: str, confirm: str):
+        oCoords = [float(coord) for coord in obstacle.split(',')]
+        cCoords = [float(coord) for coord in confirm.split(',')]
+        pygui.moveTo(oCoords)
+        sleep(0.2)
+        pygui.click()
+        sleep(0.2)
+        pygui.moveTo(cCoords)
+        sleep(0.2)
+        pygui.click()
 
     def move_mouse(self, action: str, location: str, click: bool):
         if action == "tower":

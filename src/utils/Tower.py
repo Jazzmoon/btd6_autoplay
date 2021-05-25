@@ -48,6 +48,7 @@ class Tower:
         sleep(0.1)
         pygui.click()
         sleep(0.1)
+        self.deselect()
         return self
 
     def select(self, click: Optional[bool]=True):
