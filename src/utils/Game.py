@@ -64,17 +64,23 @@ class Game:
         while "VICTORY" not in (result := (self.get_text(True), self.get_text(False))) and \
                 "GAME OVER" not in result:
             sleep(5)
-        pygui.click(self.settings["game"]["nextButton"])
+        pygui.moveTo(self.settings["game"]["nextButton"])
+        pygui.click()
         sleep(0.25)
-        pygui.click(self.settings["game"]["freeplay"])
-        sleep(1)
-        pygui.click(self.settings["game"]["freeplayOk"])
-        sleep(0.2)
+        pygui.moveTo(self.settings["game"]["freeplay"])
+        pygui.click()
+        sleep(3)
+        pygui.moveTo(self.settings["game"]["freeplayOk"])
+        pygui.click()
+        sleep(0.5)
         pygui.press(self.settings["game"]["menuHotkey"])
         sleep(0.2)
-        pygui.click(self.settings["game"]["restartGame"])
+        pygui.moveTo(self.settings["game"]["restartGame"])
+        pygui.click()
         sleep(0.2)
-        pygui.click(self.settings["game"]["confirm"])
+        pygui.moveTo(self.settings["game"]["confirm"])
+        pygui.click()
+        sleep(1)
         return "VICTORY" in result
 
     ### GET ROUND USING PYTESSERACT ###
