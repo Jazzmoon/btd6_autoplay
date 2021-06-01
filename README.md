@@ -18,6 +18,11 @@ In addition to Python 3.8 (due to our use of the `:=` operator), you will need t
 pip install -r requirements.txt # Install requirements for the script
 ```
 
+Additionally, you will need to install Pytesseract's `Tesseract` dependancy in order to use Pytesseract. This is pretty irritating to do, so I will link some guides that better explain it than I ever could:
+
+Using Conda: [here](https://pythonforundergradengineers.com/how-to-install-pytesseract.html)
+Tesseract Source Code: [here](https://github.com/tesseract-ocr/tesseract)
+
 - To begin the Dark Castle game loop, open the game to the main screen and select Obyn as your hero.
 - Next, open a terminal and use `cd` to navigate to the script locations.
 - In terminal, run `scripts/run.*`, where the extension depending on your os.
