@@ -23,6 +23,8 @@ Additionally, you will need to install Pytesseract's `Tesseract` dependancy in o
 Using Conda: [here](https://pythonforundergradengineers.com/how-to-install-pytesseract.html)
 Tesseract Source Code: [here](https://github.com/tesseract-ocr/tesseract)
 
+We recommend using the latest version of Python, version 3.9.5 at the moment of writing this, as Pytesseract seems to have gotten a bit faster in terms of processing the images for text. This is not a requirement though, and should run in Python 3.8.
+
 - To begin the Dark Castle game loop, open the game to the main screen and select Obyn as your hero.
 - Next, open a terminal and use `cd` to navigate to the script locations.
 - In terminal, run `scripts/run.*`, where the extension depending on your os.
