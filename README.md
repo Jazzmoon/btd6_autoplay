@@ -21,6 +21,7 @@ pip install -r requirements.txt # Install requirements for the script
 Additionally, you will need to install Pytesseract's `Tesseract` dependancy in order to use Pytesseract. This is pretty irritating to do, so I will link some guides that better explain it than I ever could:
 
 Using Conda: [here](https://pythonforundergradengineers.com/how-to-install-pytesseract.html)
+
 Tesseract Source Code: [here](https://github.com/tesseract-ocr/tesseract)
 
 We recommend using the latest version of Python, version 3.9.5 at the moment of writing this, as Pytesseract seems to have gotten a bit faster in terms of processing the images for text. This is not a requirement though, and should run in Python 3.8.
