@@ -8,11 +8,17 @@ from utils.Console import Console
 from utils.Game import Game
 
 global OS_PATH
+global DELIMETER
 OS_PATH = os.path.dirname(os.path.realpath(__file__))
+if os.name in ['nt']:
+    DELIMETER = '\\'
+else:
+    DELIMETER = '/'
 
 # Fetch command line arguments for map
 parser = ag.ArgumentParser()
 parser.add_argument("-map", "--map")
+parser.add_argument("-gm", "--gamemode")
 args = parser.parse_args(sys.argv[1:])
 
 # Create Console
@@ -24,15 +30,22 @@ with open(os.path.join(OS_PATH, "config/settings.json"), 'r') as json_settings:
 
 try:
     console.welcome_screen()
+
     if not args.map:
-        mapName = input("Please type the name of the config file you wish to use\n(not inc .json) >>> ")
+        mapName = input("Please choose the map you want to load the configs for >>> ")
     else:
         mapName = args.map
 
-    print(f"Using argument from command line: {mapName}.json")
+    if not args.gamemode:
+        gamemode = input("Please choose the gamemode (no .json extension) >>> ")
+    else:
+        gamemode = args.gamemode
 
+    mapName = mapName.lower()
+    gamemode = gamemode.lower()
+    print(f"Loading Config: {os.path.join(OS_PATH, f'config{DELIMETER}maps{DELIMETER}{mapName}{DELIMETER}{gamemode}.json')}")
 
-    with open(os.path.join(OS_PATH, f"config/maps/{mapName}.json"), 'r') as map_json:
+    with open(os.path.join(OS_PATH, f"config{DELIMETER}maps{DELIMETER}{mapName}{DELIMETER}{gamemode}.json"), 'r') as map_json:
         map_settings = load(map_json)
 
     sleep(2)
