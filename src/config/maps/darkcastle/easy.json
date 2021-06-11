@@ -1,0 +1,37 @@
+{
+    "towers": {
+      "obyn": {
+        "hotkey": "u",
+        "coords": [570, 480],
+        "name": "Obyn"
+      },
+      "dart": {
+        "hotkey": "q",
+        "coords": [590, 610],
+        "name": "Dart Monkey"
+      },
+      "sub": {
+        "hotkey": "x",
+        "coords": [1090, 430],
+        "name": "Monkey Sub"
+      }
+    },
+    "instructions": {
+      "1": [
+        "start",
+        "place obyn",
+        "place dart",
+        "sleep 1",
+        "upgrade dart 0-0-2"
+      ],
+      "3": ["place sub", "sleep 10"],
+      "5": ["upgrade sub 2-0-0"],
+      "8": ["upgrade sub 2-0-1"],
+      "14": ["upgrade sub 2-0-2"],
+      "18": ["upgrade sub 2-0-3"],
+      "28": ["upgrade sub 2-0-4"],
+      "34": ["upgrade dart 0-2-2"],
+      "38": ["upgrade dart 0-2-4"],
+      "40": ["restart"]
+    }
+}
