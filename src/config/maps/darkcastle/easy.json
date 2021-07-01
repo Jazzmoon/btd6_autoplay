@@ -24,9 +24,9 @@
         "sleep 1",
         "upgrade dart 0-0-2"
       ],
-      "3": ["place sub", "sleep 10"],
-      "5": ["upgrade sub 2-0-0"],
-      "8": ["upgrade sub 2-0-1"],
+      "3": ["place sub"],
+      "7": ["upgrade sub 2-0-0"],
+      "9": ["upgrade sub 2-0-1"],
       "14": ["upgrade sub 2-0-2"],
       "18": ["upgrade sub 2-0-3"],
       "28": ["upgrade sub 2-0-4"],
