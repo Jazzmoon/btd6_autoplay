@@ -1,5 +1,9 @@
 # Bloons TD 6 Auto Play
 
+## Disclaimer
+
+Please be aware, Ninja Kiwi doesn't support the use of internal or external modding. Under Ninja Kiwi's Terms of Service, scripts such as this one can lead to a ban on your account. Using this, or any other script like it, means that you accept this risk and will not blaim us in the event of action being taken against your account.
+
 ## Usage
 
 This requires games to be played in fullscreen with auto-start to work.
@@ -28,8 +32,8 @@ We recommend using the latest version of Python, version 3.9.5 at the moment of 
 
 - To begin the Dark Castle game loop, open the game to the main screen and select Obyn as your hero.
 - Next, open a terminal and use `cd` to navigate to the script locations.
-- In terminal, run `scripts/run.*`, where the extension depending on your os.
-- Once in python interactive terminal, follow on screen instructions. Make sure you type name of map as found in maps folder. (.py extension is not needed)
+- In terminal, run `scripts/run.*`, where the extension is dependant on your os. A `sh`, `bat`, and `ps` script are privided for your convenience.
+- Once in python interactive terminal, follow on screen instructions. Make sure you type name of map as found in maps folder. (`.py` extension is not needed, and should be excluded)
 
 ## Settings
 
