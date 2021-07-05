@@ -41,4 +41,6 @@ We have a JSON file now being read with all of the timings and settings for the 
 
 ## Custom Maps
 
-See `logs.json` for example game map.
+See `src/config/maps/darkcastle/easy.json` for example game map and basic instructions.
+
+All instructions can be found in `src/utils/ActionParser.py`.
