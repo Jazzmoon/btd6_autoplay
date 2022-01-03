@@ -2,7 +2,7 @@
 
 ## Disclaimer
 
-Please be aware, Ninja Kiwi doesn't support the use of internal or external modding. Under Ninja Kiwi's Terms of Service, scripts such as this one can lead to a ban on your account. Using this, or any other script like it, means that you accept this risk and will not blaim us in the event of action being taken against your account.
+Please be aware, Ninja Kiwi doesn't support the use of internal or external modding. Under Ninja Kiwi's Terms of Service, scripts such as this one can lead to a ban on your account. Using this, or any other script like it, means that you accept this risk and agree we (Jazzmoon) are not held accountable for any actions taken agaisnt your account.
 
 ## Usage
 
