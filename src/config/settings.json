@@ -1,26 +1,26 @@
 {
-    "tesseractPath": "C:\\Users\\User\\AppData\\Local\\Programs\\Tesseract-OCR\\tesseract.exe",
-    "game": {
-        "startHotkey": "space",
-        "menuHotkey": "esc",
-        "sellHotkey": "backspace",
-        "upgradeTopPathHotkey": ",",
-        "upgradeMiddlePathHotkey": ".",
-        "upgradeBottomPathHotkey": "/",
-        "victoryBanner": [700, 120, 515, 110],
-        "defeatBanner": [590, 40, 730, 115],
-        "nextButton": [965, 920],
-        "freeplay": [1120, 855],
-        "freeplayOk": [965, 765],
-        "restartGame": [1200, 845],
-        "confirm": [1130, 710],
-        "home": [845, 860],
-        "roundCounter": [1380, 30, 180, 45]
-    },
-    "progressBar": {
-        "prefix": "Progress: [",
-        "suffix": "] [PERCENT]%",
-        "completed": "#",
-        "null": "-"
-    }
+  "tesseractPath": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
+  "game": {
+    "startHotkey": "space",
+    "menuHotkey": "esc",
+    "sellHotkey": "backspace",
+    "upgradeTopPathHotkey": ",",
+    "upgradeMiddlePathHotkey": ".",
+    "upgradeBottomPathHotkey": "/",
+    "victoryBanner": [700, 120, 515, 110],
+    "defeatBanner": [590, 40, 730, 115],
+    "nextButton": [965, 920],
+    "freeplay": [1220, 855],
+    "freeplayOk": [965, 765],
+    "restartGame": [1080, 846],
+    "confirm": [1135, 727],
+    "home": [845, 860],
+    "roundCounter": [1380, 30, 180, 45]
+  },
+  "progressBar": {
+    "prefix": "Progress: [",
+    "suffix": "] [PERCENT]%",
+    "completed": "#",
+    "null": "-"
+  }
 }
