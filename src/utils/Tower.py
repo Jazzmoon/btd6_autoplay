@@ -1,6 +1,7 @@
 from typing import Union, Optional
 from time import sleep
 import pyautogui as pygui
+import keyboard as kb
 
 class Tower:
     def __init__(self, mapSettings: dict, settings: dict):
@@ -44,7 +45,7 @@ class Tower:
     def place(self):
         pygui.moveTo(self.__coords)
         sleep(0.1)
-        pygui.press(self.__hotkey)
+        kb.press_and_release(self.__hotkey)
         sleep(0.1)
         pygui.click()
         sleep(0.1)
@@ -70,13 +71,13 @@ class Tower:
         newPath = tuple([int(path_item) for path_item in path.split('-')])
         upgradeDiff = tuple([new - old for (new, old) in zip(newPath, self.__path)])
         for _ in range(upgradeDiff[0]):
-            pygui.press(self.__settings["game"]["upgradeTopPathHotkey"])
+            kb.press_and_release(self.__settings["game"]["upgradeTopPathHotkey"])
             sleep(0.1)
         for _ in range(upgradeDiff[1]):
-            pygui.press(self.__settings["game"]["upgradeMiddlePathHotkey"])
+            kb.press_and_release(self.__settings["game"]["upgradeMiddlePathHotkey"])
             sleep(0.1)
         for _ in range(upgradeDiff[2]):
-            pygui.press(self.__settings["game"]["upgradeBottomPathHotkey"])
+            kb.press_and_release(self.__settings["game"]["upgradeBottomPathHotkey"])
             sleep(0.1)
         self.__path = newPath
         self.deselect()
@@ -85,6 +86,6 @@ class Tower:
     def sell(self):
         self.select()
         sleep(0.25)
-        pygui.press(self.__settings["game"]["sellHotkey"])
+        kb.press_and_release(self.__settings["game"]["sellHotkey"])
         self.deselect()
         return self

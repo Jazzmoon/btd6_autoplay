@@ -2,6 +2,7 @@ from .Console import Console
 from .Tower import Tower
 from time import sleep
 import pyautogui as pygui
+import keyboard as kb
 
 from typing import Union, Optional
 
@@ -80,7 +81,7 @@ class ActionParser:
 
     def press_keys(self, *argv: Union[str, list[str]]):
         for arg in argv:
-            pygui.press(arg)
+            kb.press_and_release(arg)
             sleep(0.25)
 
     def move_mouse(self, position: tuple[float], click: Optional[bool] = False):

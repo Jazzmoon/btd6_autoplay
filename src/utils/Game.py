@@ -9,6 +9,7 @@ from .ActionParser import ActionParser
 import pyautogui as pygui
 import pytesseract as tesser
 from PIL import Image
+import keyboard as kb
 
 # Import ImageGrab if possible, might fail on Linux
 global use_grab
@@ -66,13 +67,13 @@ class Game:
             sleep(5)
         pygui.moveTo(self.settings["game"]["nextButton"])
         pygui.click()
-        sleep(0.25)
+        sleep(2)
         pygui.moveTo(self.settings["game"]["freeplay"])
         pygui.click()
         sleep(2)
-        pygui.press(self.settings["game"]["menuHotkey"])
+        kb.press_and_release(self.settings["game"]["menuHotkey"])
         sleep(1)
-        pygui.press(self.settings["game"]["menuHotkey"])
+        kb.press_and_release(self.settings["game"]["menuHotkey"])
         sleep(1)
         pygui.moveTo(self.settings["game"]["restartGame"])
         pygui.click()
