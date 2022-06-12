@@ -60,6 +60,7 @@ try:
 
         if gameResult == True:
             console.wins += 1
+            console.moneyGenerated += map_settings["moneyPerGame"]
         else:
             console.loss += 1
         console.gamesPlayed += 1
@@ -70,3 +71,4 @@ except KeyboardInterrupt:
 except Exception as e:
     print(f"An error has occured:")
     raise e
+    exit()

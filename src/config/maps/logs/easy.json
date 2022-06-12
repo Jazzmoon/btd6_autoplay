@@ -1,23 +1,37 @@
 {
+  "moneyPerGame": 30,
   "towers": {
     "obyn": {
       "hotkey": "u",
-      "coords": [475, 460],
+      "coords": [
+        475,
+        460
+      ],
       "name": "Obyn"
     },
     "dart": {
       "hotkey": "q",
-      "coords": [350, 460],
+      "coords": [
+        350,
+        460
+      ],
       "name": "Dart Monkey"
     },
     "ninja": {
       "hotkey": "d",
-      "coords": [475, 525],
+      "coords": [
+        475,
+        525
+      ],
       "name": "Ninja Monkey"
     }
   },
   "instructions": {
-    "1": ["place obyn", "place dart", "start"],
+    "1": [
+      "place obyn",
+      "place dart",
+      "start"
+    ],
     "5": [
       "place ninja",
       "sleep 2",
@@ -25,9 +39,18 @@
       "sleep 5",
       "upgrade ninja 2-0-0"
     ],
-    "10": ["sleep 5", "upgrade ninja 3-0-1"],
-    "30": ["upgrade ninja 4-0-2"],
-    "33": ["upgrade dart 0-2-4"],
-    "40": ["restart"]
+    "10": [
+      "sleep 5",
+      "upgrade ninja 3-0-1"
+    ],
+    "30": [
+      "upgrade ninja 4-0-2"
+    ],
+    "33": [
+      "upgrade dart 0-2-4"
+    ],
+    "40": [
+      "restart"
+    ]
   }
 }

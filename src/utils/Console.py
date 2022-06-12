@@ -23,6 +23,7 @@ class Console:
         self.__wins: int = 0
         self.__loss: int = 0
         self.__gamesPlayed: int = 0
+        self.__moneyGenerated: int = 0
 
 
     @property
@@ -40,6 +41,14 @@ class Console:
     @loss.setter
     def loss(self, value: int):
         self.__loss = value
+    
+    @property
+    def moneyGenerated(self) -> int:
+        return self.__moneyGenerated
+
+    @moneyGenerated.setter
+    def moneyGenerated(self, value: int):
+        self.__moneyGenerated = value
 
     @property
     def gamesPlayed(self) -> int:
@@ -61,7 +70,7 @@ class Console:
 
 
     def show_stats(self):
-        print(f"Wins: {termColor.GREEN}{self.wins}\n{termColor.DEFAULT}Losses: {termColor.RED}{self.loss}\n{termColor.DEFAULT}Games Played: {termColor.YELLOW}{self.gamesPlayed}\n{self.screen_bar()}")
+        print(f"Wins: {termColor.GREEN}{self.wins}\n{termColor.DEFAULT}Losses: {termColor.RED}{self.loss}\n{termColor.DEFAULT}Games Played: {termColor.YELLOW}{self.gamesPlayed}\n{termColor.DEFAULT}Money Gained: {termColor.GREEN}{self.moneyGenerated}\n{self.screen_bar()}")
 
     def game_logs_below(self):
         print("Current Game Logs:")
