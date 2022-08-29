@@ -4,7 +4,7 @@
 
 Please be aware, Ninja Kiwi doesn't support the use of internal or external modding. Under Ninja Kiwi's Terms of Service, scripts such as this one can lead to a ban on your account. Using this, or any other script like it, means that you accept this risk and agree we (Jazzmoon) are not held accountable for any actions taken against your account.
 
-Note: This autoplayer was created by [Team Jazzmoon](https://github.com/Jazzmoon/btd6_autoplay). I am not associated with them and do not have permissions to edit their repository. Since I wanted to improve the bot, I mostly rebuilt it and created a repository where people could actually contribute to it.
+Note: This autoplayer was created by [Team Jazzmoon](https://github.com/Jazzmoon/btd6_autoplay) and built upon further by developer [remyvanlis](https://github.com/remyvanlis). I, remyvanlis, am not associated with them and do not have permissions to edit their repository. Since I wanted to improve the bot, I mostly rebuilt it and created a repository where people could actually contribute to it, available [here](https://github.com/remyvanlis/btd6-bot).
 
 ## Usage
 
