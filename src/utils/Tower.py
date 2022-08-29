@@ -1,7 +1,8 @@
 from typing import Union, Optional
 from time import sleep
 import pyautogui as pygui
-import keyboard as kb
+import pydirectinput as pydirectinput
+
 
 class Tower:
     def __init__(self, mapSettings: dict, settings: dict):
@@ -15,7 +16,7 @@ class Tower:
         self.__hotkey: Union[str, list[str]] = mapSettings["hotkey"]
         self.__coords: Union[list[Union[int, float]],
                              tuple[Union[int, float]]] = mapSettings["coords"]
-        self.__path: tuple[int] = (0,0,0)
+        self.__path: tuple[int, int, int] = (0, 0, 0)
         self.__settings: dict = settings
 
     @property
@@ -31,7 +32,7 @@ class Tower:
         return self.__coords
 
     @property
-    def path(self) -> tuple[int]:
+    def path(self) -> tuple[int, int, int]:
         return self.__path
 
     @path.setter
@@ -44,11 +45,11 @@ class Tower:
 
     def place(self):
         pygui.moveTo(self.__coords)
-        sleep(0.1)
-        kb.press_and_release(self.__hotkey)
-        sleep(0.1)
+        sleep(0.2)
+        pydirectinput.press(self.__hotkey)
+        sleep(0.2)
         pygui.click()
-        sleep(0.1)
+        sleep(0.2)
         self.deselect()
         return self
 
@@ -61,7 +62,7 @@ class Tower:
         return self
 
     def deselect(self):
-        sW, sH = pygui.size()
+        sW, sH = pydirectinput.size()
         pygui.moveTo(sW / 2, sH / 2)
         pygui.click()
         return self
@@ -71,14 +72,14 @@ class Tower:
         newPath = tuple([int(path_item) for path_item in path.split('-')])
         upgradeDiff = tuple([new - old for (new, old) in zip(newPath, self.__path)])
         for _ in range(upgradeDiff[0]):
-            kb.press_and_release(self.__settings["game"]["upgradeTopPathHotkey"])
-            sleep(0.1)
+            pydirectinput.press(self.__settings["game"]["upgradeTopPathHotkey"])
+            sleep(0.2)
         for _ in range(upgradeDiff[1]):
-            kb.press_and_release(self.__settings["game"]["upgradeMiddlePathHotkey"])
-            sleep(0.1)
+            pydirectinput.press(self.__settings["game"]["upgradeMiddlePathHotkey"])
+            sleep(0.2)
         for _ in range(upgradeDiff[2]):
-            kb.press_and_release(self.__settings["game"]["upgradeBottomPathHotkey"])
-            sleep(0.1)
+            pydirectinput.press(self.__settings["game"]["upgradeBottomPathHotkey"])
+            sleep(0.2)
         self.__path = newPath
         self.deselect()
         return self
@@ -86,6 +87,6 @@ class Tower:
     def sell(self):
         self.select()
         sleep(0.25)
-        kb.press_and_release(self.__settings["game"]["sellHotkey"])
+        pydirectinput.press(self.__settings["game"]["sellHotkey"])
         self.deselect()
         return self

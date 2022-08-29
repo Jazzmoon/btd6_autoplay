@@ -1,10 +1,12 @@
+import pydirectinput
+
 from .Console import Console
 from .Tower import Tower
 from time import sleep
 import pyautogui as pygui
-import keyboard as kb
 
-from typing import Union, Optional
+from typing import Union
+
 
 class ActionParser:
     def __init__(self, towers: dict, console: Console, settings: dict):
@@ -32,11 +34,21 @@ class ActionParser:
             self.move_mouse(stringArray[1], stringArray[2], click=False)
         elif stringArray[0] == "sleep":
             sleep(float(stringArray[1]))
+        elif stringArray[0] == "target":
+            self.change_target(stringArray[1], stringArray[2])
         else:
             raise ValueError(f"Unknown instruction \"{stringArray[0]}\"")
 
     def find_tower(self, towerName: str) -> Tower:
         return self.towers[towerName]
+
+    def change_target(self, towerName: str, amountOfTabsRequired: str):
+        pygui.moveTo(self.find_tower(towerName).coords)
+        pygui.click()
+        for i in range(int(amountOfTabsRequired)):
+            pydirectinput.press('tab')
+        pygui.moveTo(self.find_tower(towerName).coords)
+        pygui.click()
 
     def place_tower(self, towerName: str):
         self.find_tower(towerName).place()
@@ -48,7 +60,7 @@ class ActionParser:
         self.find_tower(towerName).sell()
 
     def use_ability(self, ability: list[str]):
-        if len(ability == 1):
+        if len(ability) == 1:
             self.press_keys(ability[0])
         elif len(ability) == 3:
             self.press_keys(ability[0])
@@ -62,7 +74,8 @@ class ActionParser:
             print(f"error: ability should have 1, 3, or 5 words, not {len(ability)}...")
             self.press_keys(ability[0])
 
-    def clear_obstacle(self, obstacle: str, confirm: str):
+    @staticmethod
+    def clear_obstacle(obstacle: str, confirm: str):
         oCoords = [float(coord) for coord in obstacle.split(',')]
         cCoords = [float(coord) for coord in confirm.split(',')]
         pygui.moveTo(oCoords)
@@ -77,14 +90,10 @@ class ActionParser:
         if action == "tower":
             self.find_tower(location).select(click=click)
         else:
-            self.mouse_to([float(s) for s in location.split(',')], click=click)
+            self.move_mouse([float(s) for s in location.split(',')], click=click)
 
-    def press_keys(self, *argv: Union[str, list[str]]):
+    @staticmethod
+    def press_keys(*argv: Union[str, list[str]]):
         for arg in argv:
-            kb.press_and_release(arg)
+            pydirectinput.press(arg)
             sleep(0.25)
-
-    def move_mouse(self, position: tuple[float], click: Optional[bool] = False):
-        pygui.moveTo(position)
-        if click:
-            pygui.click()

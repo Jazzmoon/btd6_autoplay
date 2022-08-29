@@ -4,6 +4,8 @@
 
 Please be aware, Ninja Kiwi doesn't support the use of internal or external modding. Under Ninja Kiwi's Terms of Service, scripts such as this one can lead to a ban on your account. Using this, or any other script like it, means that you accept this risk and agree we (Jazzmoon) are not held accountable for any actions taken against your account.
 
+Note: This autoplayer was created by [Team Jazzmoon](https://github.com/Jazzmoon/btd6_autoplay). I am not associated with them and do not have permissions to edit their repository. Since I wanted to improve the bot, I mostly rebuilt it and created a repository where people could actually contribute to it.
+
 ## Usage
 
 This requires games to be played in fullscreen with auto-start to work.
@@ -22,13 +24,9 @@ In addition to Python 3.8 (due to our use of the `:=` operator), you will need t
 pip install -r requirements.txt # Install requirements for the script
 ```
 
-Additionally, you will need to install Pytesseract's `Tesseract` dependancy in order to use Pytesseract. This is pretty irritating to do, so I will link some guides that better explain it than I ever could:
+Additionally, you will need to install Pytesseract's `Tesseract` dependancy in order to use Pytesseract. Simply download the 32-bit installer, install it should simply work. If it does not work, open Statemachine.py and Screen.py, and change the path to yours there. This is a requirement for anything that isn't windows.
 
-Using Conda: [here](https://pythonforundergradengineers.com/how-to-install-pytesseract.html)
-
-Tesseract Source Code: [here](https://github.com/tesseract-ocr/tesseract)
-
-We recommend using the latest version of Python, version 3.9.5 at the moment of writing this, as Pytesseract seems to have gotten a bit faster in terms of processing the images for text. This is not a requirement though, and should run in Python 3.8.
+We recommend using the latest version of Python, version 3.10.* at the moment of writing this, as Pytesseract seems to have gotten a bit faster in terms of processing the images for text. This is not a requirement though, and should run in Python 3.8.
 
 - To begin the Dark Castle game loop, open the game to the main screen and select Obyn as your hero.
 - Next, open a terminal and use `cd` to navigate to the script locations.

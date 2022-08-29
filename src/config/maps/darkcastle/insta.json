@@ -1,0 +1,242 @@
+{
+  "rules": {
+    "gamemode": "easy",
+    "waves": 100
+  },
+  "towers": {
+    "obyn": {
+      "hotkey": "u",
+      "coords": [
+        570,
+        480
+      ],
+      "name": "Obyn"
+    },
+    "dart": {
+      "hotkey": "q",
+      "coords": [
+        590,
+        610
+      ],
+      "name": "Dart Monkey"
+    },
+    "sub": {
+      "hotkey": "x",
+      "coords": [
+        1090,
+        430
+      ],
+      "name": "Monkey Sub"
+    },
+    "bananafarm1": {
+      "hotkey": "h",
+      "coords": [
+        970,
+        90
+      ],
+      "name": "Banana Farm"
+    },
+    "bananafarm2": {
+      "hotkey": "h",
+      "coords": [
+        790,
+        90
+      ],
+      "name": "Banana Farm"
+    },
+    "wizardmonkey1": {
+      "hotkey": "a",
+      "coords": [
+        810,
+        670
+      ],
+      "name": "Wizard monkey"
+    },
+    "wizardmonkey2": {
+      "hotkey": "a",
+      "coords": [
+        999,
+        682
+      ],
+      "name": "Wizard monkey"
+    },
+    "monkeyvillage": {
+      "hotkey": "k",
+      "coords": [
+        852,
+        763
+      ],
+      "name": "Monkey Village"
+    },
+    "helipilot1": {
+      "hotkey": "b",
+      "coords": [
+        848,
+        978
+      ],
+      "name": "Heli Pilot"
+    },
+    "helipilot2": {
+      "hotkey": "b",
+      "coords": [
+        698,
+        828
+      ],
+      "name": "Heli Pilot"
+    },
+    "monkeybuccaneer": {
+      "hotkey": "c",
+      "coords": [
+        1100,
+        705
+      ],
+      "name": "Monkey Buccaneer"
+    },
+    "dartlinggunner": {
+      "hotkey": "m",
+      "coords": [
+        718,
+        693
+      ],
+      "name": "Dartling Gunner"
+    },
+    "bombshooter": {
+      "hotkey": "e",
+      "coords": [
+        820,
+        405
+      ],
+      "name": "Bomb Shooter"
+    },
+    "alchemist": {
+      "hotkey": "f",
+      "coords": [
+        914,
+        664
+      ],
+      "name": "Alchemist"
+    },
+    "spikefactory": {
+      "hotkey": "j",
+      "coords": [
+        960,
+        410
+      ],
+      "name": "Spike Factory"
+    },
+    "supermonkey": {
+      "hotkey": "s",
+      "coords": [
+        720,
+        390
+      ],
+      "name": "Super Monkey"
+    }
+  },
+  "instructions": {
+    "1": [
+      "start",
+      "place obyn",
+      "place dart",
+      "sleep 1",
+      "upgrade dart 0-0-2"
+    ],
+    "3": [
+      "place sub"
+    ],
+    "7": [
+      "upgrade sub 2-0-0"
+    ],
+    "9": [
+      "upgrade sub 2-0-1"
+    ],
+    "14": [
+      "upgrade sub 2-0-2"
+    ],
+    "18": [
+      "upgrade sub 2-0-3"
+    ],
+    "28": [
+      "upgrade sub 2-0-4"
+    ],
+    "34": [
+      "upgrade dart 0-2-2"
+    ],
+    "38": [
+      "upgrade dart 0-2-4"
+    ],
+    "39": [
+      "place bananafarm1",
+      "upgrade bananafarm1 2-0-3"
+    ],
+    "41": [
+      "place bananafarm2",
+      "upgrade bananafarm2 2-0-3"
+    ],
+    "42": [
+      "place wizardmonkey1"
+    ],
+    "43": [
+      "upgrade wizardmonkey1 3-0-2"
+    ],
+    "45": [
+      "place monkeyvillage",
+      "upgrade monkeyvillage 2-2-0"
+    ],
+    "48": [
+      "upgrade monkeyvillage 2-3-0"
+    ],
+    "49": [
+      "place helipilot1"
+    ],
+    "50": [
+      "upgrade helipilot1 2-0-3"
+    ],
+    "51": [
+      "upgrade wizardmonkey1 4-0-2"
+    ],
+    "55": [
+      "place monkeybuccaneer",
+      "upgrade monkeybuccaneer 0-2-4"
+    ],
+    "60": [
+      "place dartlinggunner",
+      "upgrade dartlinggunner 0-2-4",
+      "target dartlinggunner 2"
+    ],
+    "63": [
+      "place bombshooter",
+      "upgrade bombshooter 4-2-0"
+    ],
+    "72": [
+      "upgrade wizardmonkey1 5-0-2"
+    ],
+    "79": [
+      "place alchemist",
+      "upgrade alchemist 4-0-2"
+    ],
+    "84": [
+      "place spikefactory",
+      "upgrade spikefactory 2-0-5",
+      "target spikefactory 3"
+    ],
+    "86": [
+      "upgrade helipilot1 2-0-4"
+    ],
+    "92": [
+      "place supermonkey",
+      "upgrade supermonkey 0-2-3"
+    ],
+    "95": [
+      "upgrade helipilot1 2-0-5"
+    ],
+    "97": [
+      "place helipilot2",
+      "upgrade helipilot2 4-2-0"
+    ],
+    "99": [
+      "place wizardmonkey2",
+      "upgrade wizardmonkey2 2-0-5"
+    ]
+  }
+}
