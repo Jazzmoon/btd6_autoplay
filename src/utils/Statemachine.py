@@ -6,8 +6,8 @@ from .Screen import Screen
 
 
 class Statemachine:
-    def __init__(self, console: Console):
-        tesser.pytesseract.tesseract_cmd = r'C:\Program Files (x86)\Tesseract-OCR\tesseract'
+    def __init__(self, console: Console, tesseract_path: str = r"C:\Program Files (x86)\Tesseract-OCR\tesseract"):
+        tesser.pytesseract.tesseract_cmd = tesseract_path
         self.console: Console = console
 
     @staticmethod

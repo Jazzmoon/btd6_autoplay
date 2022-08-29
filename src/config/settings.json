@@ -1,29 +1,30 @@
 {
-    "game": {
-        "startHotkey": "space",
-        "menuHotkey": "esc",
-        "sellHotkey": "backspace",
-        "upgradeTopPathHotkey": ",",
-        "upgradeMiddlePathHotkey": ".",
-        "upgradeBottomPathHotkey": "/",
-        "victoryBanner": [700, 120, 515, 110],
-        "defeatBanner": [590, 40, 730, 115],
-        "nextButton": [965, 920],
-        "freeplay": [1200, 845],
-        "freeplayOk": [965, 765],
-        "restartGame": [1079, 850],
-        "confirm": [1130, 710],
-        "home": [845, 860],
-        "defeatNextButton": [834, 815],
-        "defeatRestartButton": [1136, 729],
-        "gameoverNextButton": [961, 913],
-        "gameoverRestartButton": [832, 816],
-        "roundCounter": [1380, 30, 180, 45]
-    },
-    "progressBar": {
-        "prefix": "Progress: [",
-        "suffix": "] [PERCENT]%",
-        "completed": "#",
-        "null": "-"
-    }
+  "tesseract_path": "C:\\Program Files\\Tesseract-OCR",
+  "game": {
+    "startHotkey": "space",
+    "menuHotkey": "esc",
+    "sellHotkey": "backspace",
+    "upgradeTopPathHotkey": ",",
+    "upgradeMiddlePathHotkey": ".",
+    "upgradeBottomPathHotkey": "/",
+    "victoryBanner": [700, 120, 515, 110],
+    "defeatBanner": [590, 40, 730, 115],
+    "nextButton": [965, 920],
+    "freeplay": [1200, 845],
+    "freeplayOk": [965, 765],
+    "restartGame": [1079, 850],
+    "confirm": [1130, 710],
+    "home": [845, 860],
+    "defeatNextButton": [834, 815],
+    "defeatRestartButton": [1136, 729],
+    "gameoverNextButton": [961, 913],
+    "gameoverRestartButton": [832, 816],
+    "roundCounter": [1380, 30, 180, 45]
+  },
+  "progressBar": {
+    "prefix": "Progress: [",
+    "suffix": "] [PERCENT]%",
+    "completed": "#",
+    "null": "-"
+  }
 }

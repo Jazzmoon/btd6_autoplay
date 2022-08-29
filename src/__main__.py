@@ -170,7 +170,10 @@ try:
     console.print_new_lines(2)
 
     # Create the statemachine and instruction handler
-    statemachine = Statemachine(console)
+    if settings["tesseract_path"] != "":
+        statemachine = Statemachine(console, settings["tesseract_path"])
+    else:
+        statemachine = Statemachine(console)
     instructionHandler = InstructionHandler(settings, map_settings, console)
 
     # Set values in the info dictionary
