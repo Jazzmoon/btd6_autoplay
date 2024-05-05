@@ -1,0 +1,45 @@
+game:
+  startHotkey: "space"
+  menuHotkey: "esc"
+  sellHotkey: "backspace"
+  upgradeTopPathHotkey: ","
+  upgradeMiddlePathHotkey: "."
+  upgradeBottomPathHotkey: "/"
+  victoryBanner:
+    x: 700
+    y: 120
+    w: 515
+    h: 110
+  defeatBanner:
+    x: 590
+    y: 40
+    w: 730
+    h: 115
+  nextButton:
+    x: 965
+    y: 920
+  freeplayButton:
+    x: 1220
+    y: 85
+  freeplayOkButton:
+    x: 965
+    y: 765
+  restartGameButton:
+    x: 1080
+    y: 846
+  confirmButton:
+    x: 1135
+    y: 727
+  homeButton:
+    x: 845
+    y: 860
+  roundCounter:
+    x: 1380
+    y: 30
+    w: 180
+    h: 45
+progressBar:
+  prefix: "Progress: ["
+  suffix: "] {0}%"
+  completed: "#"
+  null: "-"
