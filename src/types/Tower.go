@@ -187,3 +187,18 @@ func (t *Tower) Sell() error {
 	}
 	return nil
 }
+
+/*
+GetPath is a function that returns the path of the tower
+  - @return [3]int: An array of integers that contains the path of the tower
+*/
+func (t *Tower) GetPath() [3]int {
+	return t.Path
+}
+
+/*
+Reset is a function that resets the path of the tower for game restarts
+*/
+func (t *Tower) Reset() {
+	t.Path = [3]int{0, 0, 0}
+}

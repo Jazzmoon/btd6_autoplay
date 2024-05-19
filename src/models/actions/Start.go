@@ -10,10 +10,10 @@ import (
 type Start struct {
 }
 
-func (s Start) Run() error {
+func (action Start) Run() error {
 	// Get the start hotkey from the settings in defs
 	if types.Settings.Game.StartHotkey == "" {
-		return errors.New("[Action | Start] No start hotkey defined in settings")
+		return errors.New("[Action | Start] no start hotkey defined in settings")
 	}
 	keyDelay := robotgo.KeySleep
 	robotgo.KeySleep = 2                                   // Await 2 milliseconds between key presses to prevent the game from not registering the key presses

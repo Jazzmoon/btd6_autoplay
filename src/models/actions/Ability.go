@@ -1,13 +1,13 @@
 package actions
 
-import "errors"
+import (
+	"Jazzmoon/btd6_autoplay/utils"
+)
 
 type Ability struct {
-	AbilityNumber int
+	AbilityKey []string
 }
 
 func (a Ability) Run() error {
-	// Do something
-
-	return errors.New("[Action | Ability] Not implemented")
+	return utils.UseAbility(a.AbilityKey...)
 }

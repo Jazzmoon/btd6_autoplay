@@ -1,14 +1,12 @@
 package actions
 
-import (
-	"errors"
-)
+import "time"
 
 type Sleep struct {
-	Duration int
+	Duration time.Duration
 }
 
-func (c *Sleep) Run() error {
-
-	return errors.New("[Action | Click] Not implemented")
+func (action Sleep) Run() error {
+	time.Sleep(action.Duration)
+	return nil
 }

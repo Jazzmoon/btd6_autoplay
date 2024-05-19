@@ -1,6 +1,7 @@
 easy:
   standard:
     moneyPerGame: 60
+    onWinAction: "restart"
     hoverLocation:
       x: 960
       y: 540
@@ -28,7 +29,7 @@ easy:
         - "start"
         - "place obyn"
         - "place dart"
-        - "sleep 1"
+        - "sleep 1s"
         - "upgrade dart 0-0-2"
       3:
         - "place sub"
@@ -46,5 +47,3 @@ easy:
         - "upgrade dart 0-2-2"
       38:
         - "upgrade dart 0-2-4"
-      40:
-        - "restart"

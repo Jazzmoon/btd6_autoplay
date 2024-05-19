@@ -1,10 +1,19 @@
 package types
 
+type OnWinAction string
+
+const (
+	Continue OnWinAction = "continue"
+	Restart  OnWinAction = "restart"
+)
+
 type MapConfigMap struct {
-	MoneyPerGame  int                   `yaml:"moneyPerGame,omitempty"`
-	Towers        map[interface{}]Tower `yaml:"towers"`
-	Instructions  map[int][]string      `yaml:"instructions"`
-	HoverLocation Coords                `yaml:"hoverLocation"`
+	MoneyPerGame   int                    `yaml:"moneyPerGame,omitempty"`
+	OnWinActions   OnWinAction            `yaml:"onWinAction,omitempty"`
+	RestartOnRound *int                   `yaml:"restartOnRound,omitempty"`
+	Towers         map[interface{}]*Tower `yaml:"towers"`
+	Instructions   map[int][]string       `yaml:"instructions"`
+	HoverLocation  Coords                 `yaml:"hoverLocation"`
 }
 
 type MapConfigDifficulty struct {

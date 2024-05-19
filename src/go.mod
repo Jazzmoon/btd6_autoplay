@@ -4,10 +4,15 @@ go 1.22.2
 
 require (
 	github.com/go-vgo/robotgo v0.110.1
-	github.com/vcaesar/imgo v0.40.0
+	github.com/manifoldco/promptui v0.9.0
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	github.com/otiai10/gosseract/v2 v2.4.1
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
+	github.com/anthonynsimon/bild v0.13.0 // indirect
+	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/gen2brain/shm v0.0.0-20230802011745-f2460f5984f7 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
@@ -24,10 +29,10 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/vcaesar/gops v0.30.2 // indirect
+	github.com/vcaesar/imgo v0.40.0 // indirect
 	github.com/vcaesar/keycode v0.10.1 // indirect
 	github.com/vcaesar/tt v0.20.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/image v0.12.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -30,7 +30,12 @@ type ProgressBar struct {
 	Null      string `yaml:"null"`
 }
 
+type ScreenConfig_Type struct {
+	Screen CoordsArea `yaml:"screen"`
+}
+
 type Settings_Type struct {
-	Game        Game        `yaml:"game"`
-	ProgressBar ProgressBar `yaml:"progressBar"`
+	Game        Game              `yaml:"game"`
+	ProgressBar ProgressBar       `yaml:"progressBar"`
+	Screen      ScreenConfig_Type `yaml:"screen"`
 }

@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"errors"
+	"Jazzmoon/btd6_autoplay/utils"
 )
 
 type Hover struct {
@@ -9,7 +9,6 @@ type Hover struct {
 	Y int
 }
 
-func (c *Hover) Run() error {
-
-	return errors.New("[Action | Click] Not implemented")
+func (c Hover) Run() error {
+	return utils.SleepMove(-1, c.X, c.Y)
 }

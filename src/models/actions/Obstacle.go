@@ -1,7 +1,8 @@
 package actions
 
 import (
-	"errors"
+	"Jazzmoon/btd6_autoplay/types"
+	"Jazzmoon/btd6_autoplay/utils"
 )
 
 type Obstacle struct {
@@ -9,7 +10,6 @@ type Obstacle struct {
 	Y int
 }
 
-func (c *Obstacle) Run() error {
-
-	return errors.New("[Action | Click] Not implemented")
+func (action Obstacle) Run() error {
+	return utils.ClearObstacle(action.X, action.Y, types.Settings.Game.ConfirmButton.X, types.Settings.Game.ConfirmButton.Y)
 }

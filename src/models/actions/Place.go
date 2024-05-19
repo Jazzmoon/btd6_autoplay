@@ -2,14 +2,12 @@ package actions
 
 import (
 	"Jazzmoon/btd6_autoplay/types"
-	"errors"
 )
 
 type Place struct {
-	Tower types.Tower
+	Tower *types.Tower
 }
 
-func (c *Place) Run() error {
-
-	return errors.New("[Action | Click] Not implemented")
+func (action Place) Run() error {
+	return action.Tower.Place()
 }

@@ -1,3 +1,8 @@
+screen:
+  x: 0
+  y: 544
+  w: 1920
+  h: 1080
 game:
   startHotkey: "space"
   menuHotkey: "esc"
@@ -7,35 +12,35 @@ game:
   upgradeBottomPathHotkey: "/"
   victoryBanner:
     x: 700
-    y: 120
+    y: 666
     w: 515
     h: 110
   defeatBanner:
     x: 590
-    y: 40
+    y: 584
     w: 730
     h: 115
   nextButton:
     x: 965
-    y: 920
+    y: 1464
   freeplayButton:
     x: 1220
-    y: 85
+    y: 629
   freeplayOkButton:
     x: 965
-    y: 765
+    y: 1309
   restartGameButton:
     x: 1080
-    y: 846
+    y: 1390
   confirmButton:
     x: 1135
-    y: 727
+    y: 1948
   homeButton:
     x: 845
-    y: 860
+    y: 1404
   roundCounter:
     x: 1380
-    y: 30
+    y: 574
     w: 180
     h: 45
 progressBar:

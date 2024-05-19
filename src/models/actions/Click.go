@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"errors"
+	"Jazzmoon/btd6_autoplay/utils"
 )
 
 type Click struct {
@@ -9,7 +9,6 @@ type Click struct {
 	Y int
 }
 
-func (c *Click) Run() error {
-
-	return errors.New("[Action | Click] Not implemented")
+func (c Click) Run() error {
+	return utils.SleepMoveAndClick(-1, c.X, c.Y)
 }
