@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/manifoldco/promptui"
 	"github.com/otiai10/gosseract/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -19,13 +18,6 @@ import (
 var (
 	ConfigPath     = filepath.Join("..", "config")
 	MapConfigsPath = filepath.Join(ConfigPath, "maps")
-
-	PromptTemplate = &promptui.SelectTemplates{
-		Label:    "{{ . }}",
-		Active:   "{{ \">\" | yellow }} {{ . | cyan }}",
-		Inactive: "  {{ . | white }}",
-		Selected: "{{ \"\U00002714\" | green }} {{ . | yellow }}",
-	}
 )
 
 /*
@@ -51,6 +43,11 @@ func main() {
 	// Initialize the gosseract client.
 	types.GosseractClient = gosseract.NewClient()
 	defer types.GosseractClient.Close()
+
+	// Check if windows
+	if utils.IsWindows() {
+		types.GosseractClient.SetTessdataPrefix("C:\\msys64\\mingw64\\share\\tessdata")
+	}
 
 	types.GosseractClient.SetPageSegMode(gosseract.PSM_SINGLE_BLOCK)
 
@@ -78,22 +75,15 @@ func main() {
 		utils.DEBUG = true
 	}
 
-	// Check if the map flag is valid.
-	if *mapFlag == "" {
-		// Prompt the user to select a map manually.
-		prompt := promptui.Select{
-			Label:     "Select a map",
-			Items:     mapNames,
-			Templates: PromptTemplate,
-		}
-
-		if _, result, err := prompt.Run(); err != nil {
-			panic(fmt.Errorf("invalid map selected: %v", err))
-		} else {
-			mapFlag = &result
-		}
+	// Check if the debug flag is valid.
+	if *isDebugFlag {
+		utils.DEBUG = true
 	}
 
+	// Ask the user to select a map if the map flag is not set.
+	if *mapFlag == "" {
+		*mapFlag = utils.PromptForUserInput("Select a map", mapNames)
+	}
 	// Load in the map config for the selected map.
 	if mapConfigData, err := os.ReadFile(filepath.Join(MapConfigsPath, *mapFlag+".yaml")); err != nil {
 		panic(err)
@@ -101,41 +91,18 @@ func main() {
 		panic(err)
 	}
 
-	// Check if the difficulty flag is valid.
+	// Ask the user to select a difficulty if the difficulty flag is not set.
 	if *difficultyFlag == "" {
-		// Prompt the user to select a difficulty manually.
-		// Use the map flag to load in only the difficulties that are valid for the selected map.
-		prompt := promptui.Select{
-			Label:     "Select a difficulty",
-			Items:     utils.NonNilFields(types.MapConfig),
-			Templates: PromptTemplate,
-		}
-
-		if _, result, err := prompt.Run(); err != nil {
-			panic(fmt.Errorf("invalid difficulty selected: %v", err))
-		} else {
-			difficultyFlag = &result
-		}
+		*difficultyFlag = utils.PromptForUserInput("Select a difficulty", utils.NonNilFields(types.MapConfig))
+	}
+	difficultyConfig, ok := utils.GetFieldValue(types.MapConfig, *difficultyFlag).(*types.MapConfigDifficulty)
+	if !ok {
+		panic("Error fetching difficulty config.")
 	}
 
-	// Check if the game mode flag is valid.
+	// Ask the user to select a game mode if the game mode flag is not set.
 	if *gameModeFlag == "" {
-		difficultyConfig, ok := utils.GetFieldValue(types.MapConfig, *difficultyFlag).(*types.MapConfigDifficulty)
-		if !ok {
-			panic("Error fetching difficulty config.")
-		}
-		// Prompt the user to select a game mode manually.
-		prompt := promptui.Select{
-			Label:     "Select a game mode",
-			Items:     utils.NonNilFields(*difficultyConfig),
-			Templates: PromptTemplate,
-		}
-
-		if _, result, err := prompt.Run(); err != nil {
-			panic(fmt.Errorf("invalid game mode selected: %v", err))
-		} else {
-			gameModeFlag = &result
-		}
+		*gameModeFlag = utils.PromptForUserInput("Select a game mode", utils.NonNilFields(*difficultyConfig))
 	}
 
 	// Validate that the selected Map, Difficulty, and Game Mode are valid in combination.
