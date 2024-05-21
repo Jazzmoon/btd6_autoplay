@@ -22,6 +22,7 @@
          ```cmd
          setx path C:\msys64\mingw64\bin
          setx path C:\msys64\usr\bin
+         setx TESSDATA_PREFIX C:\msys64\mingw64\share\tessdata
          ```
 
          This will add the MSYS2 binaries to your path so you can run them from the command prompt

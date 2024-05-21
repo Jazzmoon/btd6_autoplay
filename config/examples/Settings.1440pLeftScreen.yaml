@@ -1,8 +1,8 @@
 screen:
   x: 0
-  y: 544
-  w: 1920
-  h: 1080
+  y: 0
+  w: 1440
+  h: 1920
 game:
   startHotkey: "space"
   menuHotkey: "esc"
@@ -10,39 +10,37 @@ game:
   upgradeTopPathHotkey: ","
   upgradeMiddlePathHotkey: "."
   upgradeBottomPathHotkey: "/"
+
   victoryBanner:
-    x: 700
-    y: 666
-    w: 515
-    h: 110
+    x: 782
+    y: 107
+    w: 1006
+    h: 249
   defeatBanner:
     x: 590
     y: 584
     w: 730
     h: 115
   nextButton:
-    x: 965
-    y: 1464
+    x: 1281
+    y: 1215
   freeplayButton:
-    x: 1220
-    y: 629
+    x: 1598
+    y: 1129
   freeplayOkButton:
-    x: 965
-    y: 1309
+    x: 1279
+    y: 1012
   restartGameButton:
-    x: 1080
-    y: 1390
+    x: 1426
+    y: 1121
   confirmButton:
-    x: 1135
-    y: 1948
-  homeButton:
-    x: 845
-    y: 1404
+    x: 1521
+    y: 973
   roundCounter:
-    x: 1380
-    y: 574
-    w: 180
-    h: 45
+    x: 1835
+    y: 38
+    w: 246
+    h: 64
 progressBar:
   prefix: "Progress: ["
   suffix: "] {0}%"

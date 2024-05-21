@@ -25,11 +25,11 @@ func (g *Game) CreateGame() {
 func (g *Game) GameRoundChecker() {
 	for {
 
-		threshold := utils.DarkBackground
+		threshold := utils.LightBackground
 
 		// Check if round counter threshold is set
-		if types.MapConfig.RoundCounterBackground != nil && *types.MapConfig.RoundCounterBackground == types.Light {
-			threshold = utils.LightBackground
+		if types.MapConfig.RoundCouterMode != nil && *types.MapConfig.RoundCouterMode == types.Dark {
+			threshold = utils.DarkBackground
 		}
 
 		img, err := utils.CaptureScreenAsJpeg(threshold, types.Settings.Game.RoundCounter.X, types.Settings.Game.RoundCounter.Y, types.Settings.Game.RoundCounter.W, types.Settings.Game.RoundCounter.H)

@@ -1,6 +1,6 @@
 screen:
   x: 0
-  y: 544
+  y: 0
   w: 1920
   h: 1080
 game:
@@ -39,10 +39,10 @@ game:
     x: 845
     y: 1404
   roundCounter:
-    x: 3917
-    y: 168
-    w: 205
-    h: 43
+    x: 1380
+    y: 574
+    w: 180
+    h: 45
 progressBar:
   prefix: "Progress: ["
   suffix: "] {0}%"

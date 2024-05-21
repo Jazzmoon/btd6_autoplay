@@ -1,4 +1,4 @@
-roundCounterBackground: "dark" # Default if not specified is "dark"
+roundCouterMode: "dark"
 easy:
   standard:
     moneyPerGame: 60

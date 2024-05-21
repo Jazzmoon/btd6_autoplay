@@ -48,7 +48,7 @@ func ProcessImage(img image.Image, threshold Threshold) ([]byte, error) {
 func CaptureScreenAsJpeg(threshold Threshold, args ...int) ([]byte, error) {
 	sshot := robotgo.CaptureImg(args...)
 	if IsDebug() {
-		robotgo.SaveJpeg(sshot, "screenshot.jpg", 100)
+		robotgo.SaveJpeg(sshot, "debug/screenshot-2.jpg", 100)
 	}
 
 	screenShot, err := ProcessImage(sshot, threshold)
@@ -61,7 +61,7 @@ func CaptureScreenAsJpeg(threshold Threshold, args ...int) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		robotgo.SaveJpeg(image, "screenshot-bw.jpg", 100)
+		robotgo.SaveJpeg(image, "debug/screenshot-bw-2.jpg", 100)
 	}
 
 	return screenShot, nil

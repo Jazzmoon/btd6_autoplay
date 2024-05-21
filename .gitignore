@@ -187,3 +187,7 @@ Thumbs.db
 go.work
 
 # End of https://www.toptal.com/developers/gitignore/api/go,python,visualstudiocode
+
+/config/Settings.yaml
+
+/src/debug/*
