@@ -32,7 +32,16 @@ type MapConfigDifficulty struct {
 	CHIMPS                *MapConfigMap `yaml:"chimps,omitempty"`
 }
 
+type RoundCounterBackground string
+
+const (
+	Dark  RoundCounterBackground = "dark"
+	Light RoundCounterBackground = "light"
+)
+
 type MapConfig_Type struct {
+	RoundCounterBackground *RoundCounterBackground `yaml:"roundCounterBackground,omitempty" jazzmoon:"notInSelector"`
+
 	Easy   *MapConfigDifficulty `yaml:"easy,omitempty"`
 	Medium *MapConfigDifficulty `yaml:"medium,omitempty"`
 	Hard   *MapConfigDifficulty `yaml:"hard,omitempty"`

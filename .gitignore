@@ -149,7 +149,6 @@ Thumbs.db
 # profiling data
 .prof
 
-
 ### VisualStudioCode ###
 .vscode/
 .vscode/*

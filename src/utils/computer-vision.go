@@ -3,41 +3,40 @@ package utils
 import (
 	"bytes"
 	"image"
+	"image/color"
 	"image/jpeg"
 
 	"github.com/go-vgo/robotgo"
 
 	"github.com/anthonynsimon/bild/adjust"
 	"github.com/anthonynsimon/bild/effect"
+	"github.com/anthonynsimon/bild/paint"
+	"github.com/anthonynsimon/bild/segment"
 	"github.com/anthonynsimon/bild/transform"
 )
 
-func ProcessImage(orignalImg image.Image) ([]byte, error) {
+type Threshold uint8
+
+const (
+	DarkBackground  Threshold = 128
+	LightBackground Threshold = 1
+)
+
+func ProcessImage(img image.Image, threshold Threshold) ([]byte, error) {
 	// get bounds of the image
-	bounds := orignalImg.Bounds()
+	bounds := img.Bounds()
 
-	img := transform.Resize(orignalImg, bounds.Dx()*5, bounds.Dy()*5, transform.NearestNeighbor)
-	//img = paint.FloodFill(img, image.Point{50, 50}, color.RGBA{255, 0, 0, 255}, 255)
-	//img = effect.Grayscale(img)
+	img = transform.Resize(img, bounds.Dx()*4, bounds.Dy()*4, transform.NearestNeighbor)
+
+	img = adjust.Contrast(img, 0.5)
+	img = segment.Threshold(img, uint8(threshold))
+	img = effect.Grayscale(img)
+	img = paint.FloodFill(img, image.Point{X: 0, Y: 0}, color.Black, 150)
+	img = transform.ShearV(img, 4)
 	img = effect.Invert(img)
-	img = effect.GrayscaleWithWeights(img, 0.45, 0.03, 0.03)
-	img = adjust.Contrast(img, 0.9)
-	img = adjust.Brightness(img, 0.3)
-
-	//img = effect.Sobel(img)
-
-	result := image.NewGray(img.Bounds())
-	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {
-		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
-			result.Set(x, y, img.At(x, y))
-		}
-	}
-
-	// Only keep black pixels
-	//result = segment.Threshold(result, 100)
 
 	var buff bytes.Buffer
-	if err := jpeg.Encode(&buff, result, &jpeg.Options{Quality: 75}); err != nil {
+	if err := jpeg.Encode(&buff, img, &jpeg.Options{Quality: 75}); err != nil {
 		return nil, err
 	}
 
@@ -46,18 +45,18 @@ func ProcessImage(orignalImg image.Image) ([]byte, error) {
 }
 
 // Capture the screen with JPEG encoding as a byte array
-func CaptureScreenAsJpeg(args ...int) ([]byte, error) {
+func CaptureScreenAsJpeg(threshold Threshold, args ...int) ([]byte, error) {
 	sshot := robotgo.CaptureImg(args...)
-	if isDebug() {
+	if IsDebug() {
 		robotgo.SaveJpeg(sshot, "screenshot.jpg", 100)
 	}
 
-	screenShot, err := ProcessImage(sshot)
+	screenShot, err := ProcessImage(sshot, threshold)
 	if err != nil {
 		return nil, err
 	}
 
-	if isDebug() {
+	if IsDebug() {
 		image, _, err := image.Decode(bytes.NewReader(screenShot))
 		if err != nil {
 			return nil, err

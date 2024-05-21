@@ -4,7 +4,7 @@ import "os"
 
 var DEBUG bool = false
 
-func isDebug() bool {
+func IsDebug() bool {
 	return DEBUG
 }
 

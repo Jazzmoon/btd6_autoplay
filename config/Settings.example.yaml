@@ -39,10 +39,10 @@ game:
     x: 845
     y: 1404
   roundCounter:
-    x: 3917
-    y: 168
-    w: 205
-    h: 43
+    x: 1380
+    y: 574
+    w: 180
+    h: 45
 progressBar:
   prefix: "Progress: ["
   suffix: "] {0}%"
