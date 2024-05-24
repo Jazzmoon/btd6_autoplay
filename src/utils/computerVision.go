@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -45,10 +46,10 @@ func ProcessImage(img image.Image, threshold Threshold) ([]byte, error) {
 }
 
 // Capture the screen with JPEG encoding as a byte array
-func CaptureScreenAsJpeg(threshold Threshold, args ...int) ([]byte, error) {
+func CaptureScreenAsJpeg(threshold Threshold, text string, args ...int) ([]byte, error) {
 	sshot := robotgo.CaptureImg(args...)
 	if IsDebug() {
-		robotgo.SaveJpeg(sshot, "debug/screenshot-2.jpg", 100)
+		robotgo.SaveJpeg(sshot, fmt.Sprintf("debug/screenshot-%s.jpg", text), 100)
 	}
 
 	screenShot, err := ProcessImage(sshot, threshold)
@@ -61,7 +62,7 @@ func CaptureScreenAsJpeg(threshold Threshold, args ...int) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		robotgo.SaveJpeg(image, "debug/screenshot-bw-2.jpg", 100)
+		robotgo.SaveJpeg(image, fmt.Sprintf("debug/screenshot-bw-%s.jpg", text), 100)
 	}
 
 	return screenShot, nil

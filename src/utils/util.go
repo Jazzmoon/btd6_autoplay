@@ -1,11 +1,20 @@
 package utils
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 var DEBUG bool = false
 
 func IsDebug() bool {
 	return DEBUG
+}
+
+func DebugLogf(format string, args ...interface{}) {
+	if IsDebug() {
+		fmt.Printf(format, args...)
+	}
 }
 
 func IsWindows() bool {

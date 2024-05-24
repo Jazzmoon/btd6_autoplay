@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
 
 	"Jazzmoon/btd6_autoplay/utils"
 
@@ -83,6 +84,7 @@ Place is a function that allows the user to place a tower on the screen
   - @return err: An error that indicates why the tower was not placed successfully
 */
 func (t *Tower) Place() error {
+
 	mouseSleep, keySleep := robotgo.MouseSleep, robotgo.KeySleep
 	robotgo.MouseSleep, robotgo.KeySleep = 2, 2
 	robotgo.Move(t.Coords.X, t.Coords.Y)
@@ -130,7 +132,11 @@ func (t *Tower) Upgrade(path string) error {
 	if upgradePath == nil {
 		return fmt.Errorf("[Tower | %s] Failed to match expected path pattern", t.Name)
 	}
+	// Remove the first element of upgradePath, which is the full match
+	upgradePath = upgradePath[1:]
+
 	for i, path := range upgradePath {
+
 		desiredPath[i], err = strconv.Atoi(path)
 		if err != nil {
 			return err
@@ -142,8 +148,10 @@ func (t *Tower) Upgrade(path string) error {
 	if err := t.Highlight(true); err != nil {
 		return err
 	}
+	time.Sleep(50 * time.Millisecond)
+
 	keySleep := robotgo.KeySleep
-	robotgo.KeySleep = 2
+	robotgo.KeySleep = 50
 	if diff[0] > 0 {
 		for i := 0; i < diff[0]; i++ {
 			if err := robotgo.KeyTap(Settings.Game.UpgradeTopPathHotkey); err != nil {
@@ -168,6 +176,9 @@ func (t *Tower) Upgrade(path string) error {
 	robotgo.KeySleep = keySleep
 	// Update the tower's path to reflect the upgrade
 	t.Path = desiredPath
+
+	utils.SleepMoveAndClick(1, CurrentMap.HoverLocation.X, CurrentMap.HoverLocation.Y, "left")
+
 	return nil
 }
 

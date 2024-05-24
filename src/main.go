@@ -37,7 +37,7 @@ func main() {
 	mapFlag := flag.String("m", "", "The map to play on.")
 	difficultyFlag := flag.String("d", "", "The difficulty to play on.")
 	gameModeFlag := flag.String("g", "", "The game mode to play on.")
-	//numGamesFlag := flag.Int("n", -1, "The number of games to play before exiting. Default is infinite.")
+	numGamesFlag := flag.Int("n", -1, "The number of games to play before exiting. Default is infinite.")
 	locationFinder := flag.Bool("l", false, "Enable location finder.")
 	debug := flag.Bool("debug", false, "Enable debug mode.")
 	flag.Parse()
@@ -99,29 +99,28 @@ func main() {
 		*gameModeFlag = utils.PromptForUserInput("Select a game mode", utils.NonNilFields(*difficultyConfig))
 	}
 
-	// Validate that the selected Map, Difficulty, and Game Mode are valid in combination.
+	// Check if the user selected a valid difficulty for the selected map.
 	if notNilDifficulties := utils.NonNilFields(types.MapConfig); !utils.Contains(notNilDifficulties, *difficultyFlag) {
 		panic("Invalid difficulty selected.")
-	} else if difficultyConfig, ok := utils.GetFieldValue(types.MapConfig, *difficultyFlag).(*types.MapConfigDifficulty); !ok {
-		panic("Invalid difficulty selected.")
-	} else if notNilGameModes := utils.NonNilFields(*difficultyConfig); !utils.Contains(notNilGameModes, *gameModeFlag) {
-		panic("Invalid game mode selected.")
-	} else if _, ok := utils.GetFieldValue(*difficultyConfig, *gameModeFlag).(*types.MapConfigMap); !ok {
+	}
+	if notNilGameModes := utils.NonNilFields(*difficultyConfig); !utils.Contains(notNilGameModes, *gameModeFlag) {
 		panic("Invalid game mode selected.")
 	}
 
+	types.CurrentMap = *utils.GetFieldValue(*difficultyConfig, *gameModeFlag).(*types.MapConfigMap)
+
 	// Print the user arguments to verify that they were loaded correctly.
-	//fmt.Println("Map:", *mapFlag)
-	//fmt.Println("Difficulty:", *difficultyFlag)
-	//fmt.Println("Game Mode:", *gameModeFlag)
-	//fmt.Println("Number of Games:", *numGamesFlag)
+	utils.DebugLogf("Map: %s\n", *mapFlag)
+	utils.DebugLogf("Difficulty: %s\n", *difficultyFlag)
+	utils.DebugLogf("Game Mode: %s\n", *gameModeFlag)
+	utils.DebugLogf("Number of Games: %d\n", *numGamesFlag)
 
 	// Initialize the gosseract client.
 	types.GosseractClient = gosseract.NewClient()
 	defer types.GosseractClient.Close()
 	types.GosseractClient.SetPageSegMode(gosseract.PSM_SINGLE_LINE)
 
-	game := models.Game{}
-	game.CreateGame()
+	game := models.InitGame()
+	game.StartGame()
 
 }
