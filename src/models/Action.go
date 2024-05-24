@@ -15,7 +15,7 @@ type ActionInterface interface {
 }
 
 func ActionFromString(aString string) (ActionInterface, error) {
-	stringArray := strings.Split(aString, "")
+	stringArray := strings.Split(aString, " ")
 	if len(stringArray) == 0 {
 		return nil, errors.New("empty string cannot be converted to action")
 	}
