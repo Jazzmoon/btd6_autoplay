@@ -13,9 +13,9 @@ import (
 )
 
 type Tower struct {
-	Name   string `yaml:"name,omitempty"`
-	Hotkey string `yaml:"hotkey"`
-	Coords Coords `yaml:"coords"`
+	Name   string   `yaml:"name,omitempty"`
+	Hotkey []string `yaml:"hotkey"`
+	Coords Coords   `yaml:"coords"`
 	Path   [3]int
 }
 
@@ -24,7 +24,7 @@ String is a function that returns a string representation of the Tower object
   - @return string: A string that contains the name, hotkey, coordinates, and path of the tower
 */
 func (t *Tower) String() string {
-	return fmt.Sprintf("Name: %s, Hotkey: %s, Coords: %v, Path: %v", t.Name, t.Hotkey, t.Coords, t.Path)
+	return fmt.Sprintf("Name: %s, Hotkey: %+v, Coords: %v, Path: %v", t.Name, t.Hotkey, t.Coords, t.Path)
 }
 
 /*
@@ -35,7 +35,7 @@ InitTower is a function that initializes a Tower object with the given name, hot
   - @param y: An integer that indicates the y-coordinate of the tower
   - @return Tower: A Tower object that contains the name, hotkey, and coordinates of the tower
 */
-func InitTower(name, hotkey string, x, y int) Tower {
+func InitTower(name string, hotkey []string, x, y int) Tower {
 	return Tower{
 		Name:   name,
 		Hotkey: hotkey,
@@ -55,9 +55,9 @@ UnmarshalYAML is a function that allows the user to unmarshal a YAML object into
 */
 func (t *Tower) UnmarshalYAML(value *yaml.Node) error {
 	var tower struct {
-		Name   string `yaml:"name"`
-		Hotkey string `yaml:"hotkey"`
-		Coords Coords `yaml:"coords"`
+		Name   string   `yaml:"name"`
+		Hotkey []string `yaml:"hotkey"`
+		Coords Coords   `yaml:"coords"`
 	}
 	if err := value.Decode(&tower); err != nil {
 		return err
@@ -84,11 +84,10 @@ Place is a function that allows the user to place a tower on the screen
   - @return err: An error that indicates why the tower was not placed successfully
 */
 func (t *Tower) Place() error {
-
 	mouseSleep, keySleep := robotgo.MouseSleep, robotgo.KeySleep
 	robotgo.MouseSleep, robotgo.KeySleep = 2, 2
 	robotgo.Move(t.Coords.X, t.Coords.Y)
-	if err := robotgo.KeyTap(t.Hotkey); err != nil {
+	if err := robotgo.KeyTap(t.Hotkey[0], t.Hotkey[1:]); err != nil {
 		return err
 	}
 	robotgo.Click("left")
@@ -154,21 +153,21 @@ func (t *Tower) Upgrade(path string) error {
 	robotgo.KeySleep = 50
 	if diff[0] > 0 {
 		for i := 0; i < diff[0]; i++ {
-			if err := robotgo.KeyTap(Settings.Game.UpgradeTopPathHotkey); err != nil {
+			if err := robotgo.KeyTap(Settings.Game.Hotkeys.UpgradeTopPath[0], Settings.Game.Hotkeys.UpgradeTopPath[1:]); err != nil {
 				return err
 			}
 		}
 	}
 	if diff[1] > 0 {
 		for i := 0; i < diff[1]; i++ {
-			if err := robotgo.KeyTap(Settings.Game.UpgradeMiddlePathHotkey); err != nil {
+			if err := robotgo.KeyTap(Settings.Game.Hotkeys.UpgradeMiddlePath[0], Settings.Game.Hotkeys.UpgradeMiddlePath[1:]); err != nil {
 				return err
 			}
 		}
 	}
 	if diff[2] > 0 {
 		for i := 0; i < diff[2]; i++ {
-			if err := robotgo.KeyTap(Settings.Game.UpgradeBottomPathHotkey); err != nil {
+			if err := robotgo.KeyTap(Settings.Game.Hotkeys.UpgradeBottomPath[0], Settings.Game.Hotkeys.UpgradeBottomPath[1:]); err != nil {
 				return err
 			}
 		}
@@ -190,7 +189,7 @@ func (t *Tower) Sell() error {
 	if err := t.Highlight(true); err != nil {
 		return err
 	}
-	if err := utils.SleepKeyTap(2, Settings.Game.SellHotkey); err != nil {
+	if err := utils.SleepKeyTap(2, Settings.Game.Hotkeys.Sell[0], Settings.Game.Hotkeys.Sell[1:]); err != nil {
 		return err
 	}
 	if err := t.Deselect(); err != nil {
