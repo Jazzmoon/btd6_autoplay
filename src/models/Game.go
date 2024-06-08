@@ -20,6 +20,9 @@ type Game struct {
 }
 
 func InitGame() *Game {
+
+	types.CurrentMap.Towers = make(map[interface{}]*types.Tower)
+
 	return &Game{
 		RoundChecker:  make(chan int, 1),
 		RoundErr:      make(chan error, 1),
@@ -109,7 +112,7 @@ func (g *Game) GameRoundChecker() {
 		threshold := utils.LightBackground
 
 		// Check if round counter threshold is set
-		if types.MapConfig.RoundCouterMode != nil && *types.MapConfig.RoundCouterMode == types.Dark {
+		if types.MapConfig.RoundCounterMode != nil && *types.MapConfig.RoundCounterMode == types.Dark {
 			threshold = utils.DarkBackground
 		}
 

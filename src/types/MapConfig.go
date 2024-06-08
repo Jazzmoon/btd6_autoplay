@@ -8,12 +8,14 @@ const (
 )
 
 type MapConfigMap struct {
-	MoneyPerGame   int                    `yaml:"moneyPerGame,omitempty"`
-	OnWinActions   OnWinAction            `yaml:"onWinAction,omitempty"`
-	RestartOnRound *int                   `yaml:"restartOnRound,omitempty"`
-	Towers         map[interface{}]*Tower `yaml:"towers"`
-	Instructions   map[int][]string       `yaml:"instructions"`
-	HoverLocation  Coords                 `yaml:"hoverLocation"`
+	MoneyPerGame   int              `yaml:"moneyPerGame,omitempty"`
+	OnWinActions   OnWinAction      `yaml:"onWinAction,omitempty"`
+	RestartOnRound *int             `yaml:"restartOnRound,omitempty"`
+	Instructions   map[int][]string `yaml:"instructions"`
+	HoverLocation  Coords           `yaml:"hoverLocation"`
+
+	// Used as a map for the placed towers
+	Towers map[interface{}]*Tower
 }
 
 type MapConfigDifficulty struct {
@@ -32,15 +34,15 @@ type MapConfigDifficulty struct {
 	CHIMPS                *MapConfigMap `yaml:"chimps,omitempty"`
 }
 
-type RoundCouterMode string
+type RoundCounterMode string
 
 const (
-	Dark  RoundCouterMode = "dark"
-	Light RoundCouterMode = "light"
+	Dark  RoundCounterMode = "dark"
+	Light RoundCounterMode = "light"
 )
 
 type MapConfig_Type struct {
-	RoundCouterMode *RoundCouterMode `yaml:"roundCouterMode,omitempty" jazzmoon:"notInSelector"`
+	RoundCounterMode *RoundCounterMode `yaml:"roundCounterMode,omitempty" jazzmoon:"notInSelector"`
 
 	Easy   *MapConfigDifficulty `yaml:"easy,omitempty"`
 	Medium *MapConfigDifficulty `yaml:"medium,omitempty"`

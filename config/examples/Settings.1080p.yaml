@@ -33,63 +33,7 @@ game:
     x: 845
     y: 1404
   roundCounter:
-    x: 1380
-    y: 574
-    w: 180
-    h: 45
-hotkeys:
-  start: ["space"]
-  pause: ["`"]
-  menu: ["esc"]
-  sell: ["backspace"]
-  upgradeTopPath: [","]
-  upgradeMiddlePath: ["."]
-  upgradeBottomPath: ["/"]
-  dart: ["q"]
-  boomerang: ["w"]
-  bomb: ["e"]
-  tack: ["r"]
-  ice: ["t"]
-  glue: ["y"]
-  sniper: ["z"]
-  sub: ["x"]
-  boat: ["c"]
-  ace: ["v"]
-  heli: ["b"]
-  mortar: ["n"]
-  dartling: ["m"]
-  wizard: ["a"]
-  super: ["s"]
-  ninja: ["d"]
-  alchemist: ["f"]
-  druid: ["g"]
-  farm: ["h"]
-  spike: ["j"]
-  village: ["k"]
-  engineer: ["l"]
-  beast: ["i"]
-  hero: ["u"]
-  targetPriorityRight: ["tab"]
-  targetPriorityLeft: ["tab", "ctrl"]
-  targetPrioritySpecial: "pagedown"
-  sendNextRound: ["space", "shift"]
-  roadSpikes: ["1", "shift"]
-  moabMine: ["2", "shift"]
-  glueTrap: ["3", "shift"]
-  camoTrap: ["4", "shift"]
-  bananaFarmer: ["5", "shift"]
-  techBot: ["6", "shift"]
-  energizingTotem: ["7", "shift"]
-  pontoon: ["8", "shift"]
-  portableLake: ["9", "shift"]
-  superMonkeyStorm: ["0", "shift"]
-  monkeyBoost: ["-", "shift"]
-  thrive: ["=", "shift"]
-  timeStop: ["[", "shift"]
-  cashDrop: ["]", "shift"]
-  copy: ["c", "ctrl"]
-progressBar:
-  prefix: "Progress: ["
-  suffix: "] {0}%"
-  completed: "#"
-  null: "-"
+    x: 1841
+    y: 47
+    w: 244
+    h: 44

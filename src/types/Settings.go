@@ -1,61 +1,6 @@
 package types
 
-type Hotkeys struct {
-	Start                 []string `yaml:"start"`
-	Pause                 []string `yaml:"pause"`
-	Menu                  []string `yaml:"menu"`
-	Sell                  []string `yaml:"sell"`
-	UpgradeTopPath        []string `yaml:"upgradeTopPath"`
-	UpgradeMiddlePath     []string `yaml:"upgradeMiddlePath"`
-	UpgradeBottomPath     []string `yaml:"upgradeBottomPath"`
-	Dart                  []string `yaml:"dart"`
-	Boomerang             []string `yaml:"boomerang"`
-	Bomb                  []string `yaml:"bomb"`
-	Tack                  []string `yaml:"tack"`
-	Ice                   []string `yaml:"ice"`
-	Glue                  []string `yaml:"glue"`
-	Sniper                []string `yaml:"sniper"`
-	Sub                   []string `yaml:"sub"`
-	Boat                  []string `yaml:"boat"`
-	Ace                   []string `yaml:"ace"`
-	Heli                  []string `yaml:"heli"`
-	Mortar                []string `yaml:"mortar"`
-	Dartling              []string `yaml:"dartling"`
-	Wizard                []string `yaml:"wizard"`
-	Super                 []string `yaml:"super"`
-	Ninja                 []string `yaml:"ninja"`
-	Alchemist             []string `yaml:"alchemist"`
-	Druid                 []string `yaml:"druid"`
-	Farm                  []string `yaml:"farm"`
-	Spike                 []string `yaml:"spike"`
-	Village               []string `yaml:"village"`
-	Engineer              []string `yaml:"engineer"`
-	Beast                 []string `yaml:"beast"`
-	Hero                  []string `yaml:"hero"`
-	TargetPriorityRight   []string `yaml:"targetPriorityRight"`
-	TargetPriorityLeft    []string `yaml:"targetPriorityLeft"`
-	TargetPrioritySpecial []string `yaml:"targetPrioritySpecial"`
-	SendNextRound         []string `yaml:"sendNextRound"`
-	RoadSpikes            []string `yaml:"roadSpikes"`
-	MoabMine              []string `yaml:"moabMine"`
-	GlueTrap              []string `yaml:"glueTrap"`
-	CamoTrap              []string `yaml:"camoTrap"`
-	BananaFarmer          []string `yaml:"bananaFarmer"`
-	TechBot               []string `yaml:"techBot"`
-	EnergizingTotem       []string `yaml:"energizingTotem"`
-	Pontoon               []string `yaml:"pontoon"`
-	PortableLake          []string `yaml:"portableLake"`
-	SuperMonkeyStorm      []string `yaml:"superMonkeyStorm"`
-	MonkeyBoost           []string `yaml:"monkeyBoost"`
-	Thrive                []string `yaml:"thrive"`
-	TimeStop              []string `yaml:"timeStop"`
-	CashDrop              []string `yaml:"cashDrop"`
-	Copy                  []string `yaml:"copy"`
-}
-
 type Game struct {
-	Hotkeys Hotkeys `yaml:"hotkeys"`
-
 	VictoryBanner CoordsArea `yaml:"victoryBanner"`
 	DefeatBanner  CoordsArea `yaml:"defeatBanner"`
 
@@ -70,19 +15,7 @@ type Game struct {
 	RoundCounter CoordsArea `yaml:"roundCounter"`
 }
 
-type ProgressBar struct {
-	Prefix    string `yaml:"prefix"`
-	Suffix    string `yaml:"suffix"`
-	Completed string `yaml:"completed"`
-	Null      string `yaml:"null"`
-}
-
-type ScreenConfig_Type struct {
-	Screen CoordsArea `yaml:"screen"`
-}
-
 type Settings_Type struct {
-	Game        Game              `yaml:"game"`
-	ProgressBar ProgressBar       `yaml:"progressBar"`
-	Screen      ScreenConfig_Type `yaml:"screen"`
+	Game   Game       `yaml:"game"`
+	Screen CoordsArea `yaml:"screen"`
 }

@@ -1,4 +1,4 @@
-roundCouterMode: "dark"
+roundCounterMode: "dark"
 easy:
   standard:
     moneyPerGame: 60
@@ -6,34 +6,15 @@ easy:
     hoverLocation:
       x: 1101
       y: 391
-    towers:
-      obyn:
-        name: "Obyn"
-        hotkey: "u"
-        coords:
-          x: 726
-          y: 641
-      dart:
-        name: "Dart Monkey"
-        hotkey: "q"
-        coords:
-          x: 757
-          y: 846
-      sub:
-        name: "Monkey Sub"
-        hotkey: "x"
-        coords:
-          x: 1458
-          y: 535
     instructions:
       1:
         - "start"
-        - "place obyn"
-        - "place dart"
+        - "place obyn hero 780 642"
+        - "place dart dart 793 841"
         - "sleep 1s"
         - "upgrade dart 0-0-2"
       3:
-        - "place sub"
+        - "place sub sub 1447 579"
       7:
         - "upgrade sub 2-0-0"
       9:

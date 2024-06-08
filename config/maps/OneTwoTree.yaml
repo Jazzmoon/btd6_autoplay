@@ -11,19 +11,19 @@ easy:
     towers:
       obyn:
         name: "Obyn"
-        hotkey: "u"
+        hotkey: ["u"]
         coords:
           x: 570
           y: 480
       dart:
         name: "Dart Monkey"
-        hotkey: "q"
+        hotkey: ["q"]
         coords:
           x: 590
           y: 610
       sub:
         name: "Monkey Sub"
-        hotkey: "x"
+        hotkey: ["x"]
         coords:
           x: 109
           y: 43

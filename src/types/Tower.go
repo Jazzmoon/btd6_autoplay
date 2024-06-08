@@ -2,8 +2,10 @@ package types
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"Jazzmoon/btd6_autoplay/utils"
@@ -27,16 +29,42 @@ func (t *Tower) String() string {
 	return fmt.Sprintf("Name: %s, Hotkey: %+v, Coords: %v, Path: %v", t.Name, t.Hotkey, t.Coords, t.Path)
 }
 
+func CapatlizeFirstLetter(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return string(s[0]+'A'-'a') + s[1:]
+}
+
+func GetHotkey(gameName string) ([]string, error) {
+
+	// Find the name of the tower in the hotkeys map
+	vals := reflect.ValueOf(Hotkeys)
+	for i := 0; i < vals.NumField(); i++ {
+		if vals.Type().Field(i).Name == CapatlizeFirstLetter(strings.ToLower(gameName)) {
+			return vals.Field(i).Interface().([]string), nil
+		}
+	}
+	return nil, fmt.Errorf("[Tower | %s] Failed to find hotkey for %s", gameName, gameName)
+}
+
 /*
 InitTower is a function that initializes a Tower object with the given name, hotkey, and coordinates
   - @param name: A string that indicates the name of the tower
-  - @param hotkey: A string that indicates the hotkey of the tower
+  - @param gameName: A string that indicates the name of the tower in the game
   - @param x: An integer that indicates the x-coordinate of the tower
   - @param y: An integer that indicates the y-coordinate of the tower
   - @return Tower: A Tower object that contains the name, hotkey, and coordinates of the tower
+  - @return error: An error that indicates why the Tower object was not initialized successfully
 */
-func InitTower(name string, hotkey []string, x, y int) Tower {
-	return Tower{
+func InitTower(name string, gameName string, x, y int) (*Tower, error) {
+
+	hotkey, err := GetHotkey(gameName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Tower{
 		Name:   name,
 		Hotkey: hotkey,
 		Coords: Coords{
@@ -44,7 +72,7 @@ func InitTower(name string, hotkey []string, x, y int) Tower {
 			Y: y,
 		},
 		Path: [3]int{0, 0, 0},
-	}
+	}, nil
 }
 
 /*
@@ -84,9 +112,11 @@ Place is a function that allows the user to place a tower on the screen
   - @return err: An error that indicates why the tower was not placed successfully
 */
 func (t *Tower) Place() error {
+	utils.DebugLogf("Placing tower %s at %v,%v\n", t.Name, t.Coords.X, t.Coords.Y)
+
 	mouseSleep, keySleep := robotgo.MouseSleep, robotgo.KeySleep
-	robotgo.MouseSleep, robotgo.KeySleep = 2, 2
-	robotgo.Move(t.Coords.X, t.Coords.Y)
+	robotgo.MouseSleep, robotgo.KeySleep = 10, 10
+	robotgo.Move(t.Coords.X, t.Coords.Y, 0)
 	if err := robotgo.KeyTap(t.Hotkey[0], t.Hotkey[1:]); err != nil {
 		return err
 	}
@@ -153,21 +183,21 @@ func (t *Tower) Upgrade(path string) error {
 	robotgo.KeySleep = 50
 	if diff[0] > 0 {
 		for i := 0; i < diff[0]; i++ {
-			if err := robotgo.KeyTap(Settings.Game.Hotkeys.UpgradeTopPath[0], Settings.Game.Hotkeys.UpgradeTopPath[1:]); err != nil {
+			if err := robotgo.KeyTap(Hotkeys.UpgradeTopPath[0], Hotkeys.UpgradeTopPath[1:]); err != nil {
 				return err
 			}
 		}
 	}
 	if diff[1] > 0 {
 		for i := 0; i < diff[1]; i++ {
-			if err := robotgo.KeyTap(Settings.Game.Hotkeys.UpgradeMiddlePath[0], Settings.Game.Hotkeys.UpgradeMiddlePath[1:]); err != nil {
+			if err := robotgo.KeyTap(Hotkeys.UpgradeMiddlePath[0], Hotkeys.UpgradeMiddlePath[1:]); err != nil {
 				return err
 			}
 		}
 	}
 	if diff[2] > 0 {
 		for i := 0; i < diff[2]; i++ {
-			if err := robotgo.KeyTap(Settings.Game.Hotkeys.UpgradeBottomPath[0], Settings.Game.Hotkeys.UpgradeBottomPath[1:]); err != nil {
+			if err := robotgo.KeyTap(Hotkeys.UpgradeBottomPath[0], Hotkeys.UpgradeBottomPath[1:]); err != nil {
 				return err
 			}
 		}
@@ -189,7 +219,7 @@ func (t *Tower) Sell() error {
 	if err := t.Highlight(true); err != nil {
 		return err
 	}
-	if err := utils.SleepKeyTap(2, Settings.Game.Hotkeys.Sell[0], Settings.Game.Hotkeys.Sell[1:]); err != nil {
+	if err := utils.SleepKeyTap(2, Hotkeys.Sell[0], Hotkeys.Sell[1:]); err != nil {
 		return err
 	}
 	if err := t.Deselect(); err != nil {

@@ -63,16 +63,34 @@ func ActionFromString(aString string) (ActionInterface, error) {
 		}
 		return actions.Obstacle{X: x, Y: y}, nil
 	case "place":
-		tower, ok := types.CurrentMap.Towers[stringArray[1]]
-		if !ok {
-			return nil, errors.New("invalid tower")
+		towerName := stringArray[1]
+		towerGlobalName := stringArray[2]
+		towerX, err := strconv.Atoi(stringArray[3])
+		if err != nil {
+			return nil, errors.New("invalid x coordinate")
 		}
+		towerY, err := strconv.Atoi(stringArray[4])
+		if err != nil {
+			return nil, errors.New("invalid y coordinate")
+		}
+
+		tower, err := types.InitTower(towerName, towerGlobalName, towerX, towerY)
+		if err != nil {
+			return nil, err
+		}
+
+		types.CurrentMap.Towers[towerName] = tower
+
 		return actions.Place{Tower: tower}, nil
 	case "sell":
 		tower, ok := types.CurrentMap.Towers[stringArray[1]]
 		if !ok {
 			return nil, errors.New("invalid tower")
 		}
+
+		// Remove the tower from the map
+		delete(types.CurrentMap.Towers, stringArray[1])
+
 		return actions.Sell{Tower: tower}, nil
 	case "sleep":
 		// Match the string against "(\d+)(m?s?)?" and extract the groups

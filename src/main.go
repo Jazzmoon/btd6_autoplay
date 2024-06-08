@@ -32,7 +32,9 @@ The point of the main function is to:
 - Argument `-n` or `--number` to specify the number of games to play before exiting. This is optional, defaulting to Infinite.
 2. Launch the game loop and start playing games according to the settings.
 */
+
 func main() {
+
 	// Load in the user arguments.
 	mapFlag := flag.String("m", "", "The map to play on.")
 	difficultyFlag := flag.String("d", "", "The difficulty to play on.")
@@ -59,6 +61,12 @@ func main() {
 	if settingsData, err := os.ReadFile(filepath.Join(ConfigPath, "Settings.yaml")); err != nil {
 		panic(err)
 	} else if err = yaml.Unmarshal(settingsData, &types.Settings); err != nil {
+		panic(err)
+	}
+
+	if HotkeysData, err := os.ReadFile(filepath.Join(ConfigPath, "Hotkeys.yaml")); err != nil {
+		panic(err)
+	} else if err = yaml.Unmarshal(HotkeysData, &types.Hotkeys); err != nil {
 		panic(err)
 	}
 
@@ -119,6 +127,8 @@ func main() {
 	types.GosseractClient = gosseract.NewClient()
 	defer types.GosseractClient.Close()
 	types.GosseractClient.SetPageSegMode(gosseract.PSM_SINGLE_LINE)
+
+	fmt.Println("Starting game...")
 
 	game := models.InitGame()
 	game.StartGame()
