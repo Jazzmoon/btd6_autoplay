@@ -1,0 +1,10 @@
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+captrs = "0.3.1"
+enigo = "0.2.1"
+rusty-tesseract = "1.1.10"
+serde = "1.0.203"
