@@ -1,3 +1,4 @@
+#[derive(Serialize, Deserialize)]
 struct Coords {
     x: i32,
     y: i32,
@@ -9,6 +10,7 @@ impl Coords {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 struct CoordsArea {
     x: i32,
     y: i32,
