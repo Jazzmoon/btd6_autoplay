@@ -1,9 +1,9 @@
-roundCounterMode: "dark"
+round_counter_mode: "dark"
 easy:
   standard:
-    moneyPerGame: 60
-    onWinAction: "restart"
-    hoverLocation:
+    money_per_game: 60
+    on_win_action: "restart"
+    hover_location:
       x: 960
       y: 540
     instructions:

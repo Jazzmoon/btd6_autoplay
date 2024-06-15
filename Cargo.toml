@@ -1,0 +1,16 @@
+[package]
+name = "btd6_autoplay"
+author = "Jazzmoon <contact@jazzmoon.ca>"
+version = "3.0.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.7", features = ["derive"] }
+enigo = "0.2.1"
+inquire = "0.7.5"
+lazy_static = "1.4.0"
+rusty-tesseract = "1.1.10"
+serde = { version = "1.0.203", features = ["derive"] }
+serde_yaml = "0.9.34"
+struct_iterable = "0.1.1"
+xcap = "0.0.10"

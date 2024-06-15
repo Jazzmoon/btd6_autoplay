@@ -1,32 +1,11 @@
-roundCouterMode: "light"
-
 # This is does not work as is copied from DarkCastle.yaml
 easy:
   standard:
-    moneyPerGame: 60
-    onWinAction: "restart"
-    hoverLocation:
+    money_per_game: 60
+    on_win_action: "restart"
+    hover_location:
       x: 960
       y: 540
-    towers:
-      obyn:
-        name: "Obyn"
-        hotkey: ["u"]
-        coords:
-          x: 570
-          y: 480
-      dart:
-        name: "Dart Monkey"
-        hotkey: ["q"]
-        coords:
-          x: 590
-          y: 610
-      sub:
-        name: "Monkey Sub"
-        hotkey: ["x"]
-        coords:
-          x: 109
-          y: 43
     instructions:
       1:
         - "start"
