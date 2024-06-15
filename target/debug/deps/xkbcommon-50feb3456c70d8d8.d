@@ -1,9 +1,0 @@
-/mnt/data/Code/btd6_autoplay/target/debug/deps/libxkbcommon-50feb3456c70d8d8.rmeta: /home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/lib.rs /home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/mod.rs /home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/compose.rs /home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/ffi.rs /home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/keysyms.rs
-
-/mnt/data/Code/btd6_autoplay/target/debug/deps/xkbcommon-50feb3456c70d8d8.d: /home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/lib.rs /home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/mod.rs /home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/compose.rs /home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/ffi.rs /home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/keysyms.rs
-
-/home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/lib.rs:
-/home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/mod.rs:
-/home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/compose.rs:
-/home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/ffi.rs:
-/home/hutchm6/.cargo/registry/src/index.crates.io-6f17d22bba15001f/xkbcommon-0.7.0/src/xkb/keysyms.rs:
