@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use crate::models::Coords;
 
 fn capitalize_first_letter(s: &str) -> String {
@@ -8,16 +9,18 @@ fn capitalize_first_letter(s: &str) -> String {
     }
 }
 
-enum TowerType {
+#[derive(Serialize, Deserialize, Debug)]
+pub enum TowerType {
     S(String),
     V(Vec<String>),
 }
 
-struct Tower {
-    name: String,
-    hotkey: Vec<String>,
-    coords: Coords,
-    path: [int32; 3]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Tower {
+    pub name: String,
+    pub hotkey: Vec<String>,
+    pub coords: Coords,
+    pub path: [int32; 3]
 }
 
 impl Tower {

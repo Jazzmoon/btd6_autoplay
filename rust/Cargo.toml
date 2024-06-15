@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-captrs = "0.3.1"
 enigo = "0.2.1"
+lazy_static = "1.4.0"
 rusty-tesseract = "1.1.10"
-serde = "1.0.203"
+serde = { version = "1.0.203", features = ["derive"] }
+serde_yaml = "0.9.34"
+xcap = "0.0.10"

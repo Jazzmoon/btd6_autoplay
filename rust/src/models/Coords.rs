@@ -1,7 +1,9 @@
-#[derive(Serialize, Deserialize)]
-struct Coords {
-    x: i32,
-    y: i32,
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Coords {
+    pub x: i32,
+    pub y: i32,
 }
 
 impl Coords {
@@ -10,12 +12,12 @@ impl Coords {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-struct CoordsArea {
-    x: i32,
-    y: i32,
-    w: i32,
-    h: i32,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CoordsArea {
+    pub x: i32,
+    pub y: i32,
+    pub w: i32,
+    pub h: i32,
 }
 
 impl CoordsArea {

@@ -1,0 +1,39 @@
+screen:
+  x: 0
+  y: 0
+  w: 1920
+  h: 1080
+game:
+  victory_banner:
+    x: 700
+    y: 666
+    w: 515
+    h: 110
+  defeat_banner:
+    x: 590
+    y: 584
+    w: 730
+    h: 115
+  next_button:
+    x: 965
+    y: 1464
+  freeplay_button:
+    x: 1220
+    y: 629
+  freeplay_ok_button:
+    x: 965
+    y: 1309
+  restart_game_button:
+    x: 1080
+    y: 1390
+  confirm_button:
+    x: 1135
+    y: 1948
+  home_button:
+    x: 845
+    y: 1404
+  round_counter:
+    x: 1841
+    y: 47
+    w: 244
+    h: 44
