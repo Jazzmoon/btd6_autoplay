@@ -16,6 +16,7 @@ use std::io::BufReader;
 use inquire::Select;
 use lib::global::{CONFIG_PATH, DEBUG, HOTKEYS, MAPS_PATH, MAP_CONFIG, SETTINGS};
 use models::hotkeys::Hotkeys;
+use models::map::MapConfig;
 use models::settings::Settings;
 
 use clap::Parser;
@@ -37,11 +38,55 @@ fn map_config_name_to_map_name(map_config_name: &str) -> String {
     map_name
 }
 
+fn load_settings() {
+    let settings_path = CONFIG_PATH.join("Settings.yaml");
+    if settings_path.exists() == false {
+        panic!("The config/Settings.yaml file does not exist. Please create it and add the necessary settings.");
+    }
+    let file = File::open(settings_path).unwrap();
+    let reader = BufReader::new(file);
+    let settings: Settings = serde_yaml::from_reader(reader).unwrap();
+    let mut settings_write_lock = SETTINGS.write().unwrap();
+    *settings_write_lock = Some(settings);
+}
+
+fn load_hotkeys() {
+    let hotkeys_path = CONFIG_PATH.join("Hotkeys.yaml");
+    if hotkeys_path.exists() == false {
+        panic!("The config/Hotkeys.yaml file does not exist. Please create it and add the necessary hotkeys.");
+    }
+    let file = File::open(hotkeys_path).unwrap();
+    let reader = BufReader::new(file);
+    let hotkeys: Hotkeys = serde_yaml::from_reader(reader).unwrap();
+    let mut hotkeys_write_lock = HOTKEYS.write().unwrap();
+    *hotkeys_write_lock = Some(hotkeys);
+}
+
+fn load_map_config(map_file_name: Option<String>) {
+    let map_path = MAPS_PATH.join(map_file_name.as_ref().unwrap());
+    let file = File::open(map_path).unwrap();
+    let reader = BufReader::new(file);
+    let map: models::map::MapConfig = serde_yaml::from_reader(reader).unwrap();
+    let mut map_write_lock = MAP_CONFIG.write().unwrap();
+    *map_write_lock = Some(map);
+}
+
+fn load_map(map_config: &MapConfig, difficulty: Option<String>, gamemode: Option<String>) {
+    let map = map_config
+        .get(difficulty.unwrap().as_ref())
+        .unwrap()
+        .get(gamemode.unwrap().as_ref())
+        .unwrap()
+        .clone();
+    let mut current_map_write_lock = lib::global::CURRENT_MAP.write().unwrap();
+    *current_map_write_lock = Some(map);
+}
+
 #[derive(Parser, Debug)]
 #[clap(version = "3.0.0")]
 #[clap(about = "An autoplay bot for Bloons Tower Defense 6")]
 struct Args {
-    /// Name of the map
+    /// The filename of the map to play, including the extension
     #[clap(short, long)]
     map: Option<String>,
 
@@ -85,33 +130,12 @@ fn main() {
     }
 
     // Load the config/Settings.1080p.yaml file into the SETTINGS global variable
-    {
-        let settings_path = CONFIG_PATH.join("Settings.yaml");
-        if settings_path.exists() == false {
-            panic!("The config/Settings.yaml file does not exist. Please create it and add the necessary settings.");
-        }
-        let file = File::open(settings_path).unwrap();
-        let reader = BufReader::new(file);
-        let settings: Settings = serde_yaml::from_reader(reader).unwrap();
-        let mut settings_write_lock = SETTINGS.write().unwrap();
-        *settings_write_lock = Some(settings);
-    }
+    load_settings();
 
     // Load the config/Hotkeys.yaml file into the HOTKEYS global variable
-    {
-        let hotkeys_path = CONFIG_PATH.join("Hotkeys.yaml");
-        if hotkeys_path.exists() == false {
-            panic!("The config/Hotkeys.yaml file does not exist. Please create it and add the necessary hotkeys.");
-        }
-        let file = File::open(hotkeys_path).unwrap();
-        let reader = BufReader::new(file);
-        let hotkeys: Hotkeys = serde_yaml::from_reader(reader).unwrap();
-        let mut hotkeys_write_lock = HOTKEYS.write().unwrap();
-        *hotkeys_write_lock = Some(hotkeys);
-    }
+    load_hotkeys();
 
     // Start validation of arguments
-
     // Load the maps directory into a hashmap
     let maps: HashMap<String, String> = MAPS_PATH
         .read_dir()
@@ -135,119 +159,92 @@ fn main() {
             }
         }
         None => {
-            let map_keys = maps.keys().collect::<Vec<&String>>();
-            let map_selection = Select::new("Please select a map:", map_keys).prompt();
+            let mut options = maps.keys().collect::<Vec<&String>>();
+            options.sort();
+            let map_selection = Select::new("Please select a map:", options).prompt();
             match map_selection {
                 Ok(map_selection) => match maps.get(map_selection) {
-                    Some(file_name) => {
-                        map_file_name = Some(file_name.clone());
-                    }
-                    None => {
-                        panic!("You did not select a valid map.");
-                    }
+                    Some(file_name) => map_file_name = Some(file_name.clone()),
+                    None => panic!("You did not select a valid map."),
                 },
-                Err(_) => {
-                    panic!("You did not select a valid map.");
-                }
+                Err(_) => panic!("You did not select a valid map."),
             }
         }
     }
 
     // Read the map file into the MAP_CONFIG global variable
-    {
-        let map_path = MAPS_PATH.join(map_file_name.as_ref().unwrap());
-        let file = File::open(map_path).unwrap();
-        let reader = BufReader::new(file);
-        let map: models::map::MapConfig = serde_yaml::from_reader(reader).unwrap();
-        let mut map_write_lock = MAP_CONFIG.write().unwrap();
-        *map_write_lock = Some(map);
-    }
+    load_map_config(map_file_name.clone());
 
     // Next, given we have a map, we need to check if the user provided a difficulty
     // Load the difficulties from the map config into a hashmap
     let map_config_read_lock = MAP_CONFIG.read().unwrap();
     let map_config = map_config_read_lock.as_ref().unwrap();
 
-    let legal_difficulties = map_config.implemented_difficulties();
+    let mut options = map_config.implemented_difficulties();
+    options.sort();
+
     let mut difficulty = args.difficulty.clone();
 
     match difficulty {
         Some(ref difficulty) => {
-            if !legal_difficulties.contains(difficulty) {
+            if !options.contains(difficulty) {
                 panic!("The difficulty provided is not a legal difficulty for the map provided.");
             }
         }
         None => {
-            if legal_difficulties.len() == 0 {
+            if options.len() == 0 {
                 panic!("There are no difficulties available for the map provided.");
-            } else if legal_difficulties.len() == 1 {
-                difficulty = Some(legal_difficulties[0].clone());
+            } else if options.len() == 1 {
+                difficulty = Some(options[0].clone());
                 println!(
                     "Only one difficulty available, selecting \"{}\"",
                     difficulty.clone().unwrap()
                 );
             } else {
-                let difficulty_selection =
-                    Select::new("Please select a difficulty:", legal_difficulties).prompt();
-                match difficulty_selection {
-                    Ok(difficulty_selection) => {
-                        difficulty = Some(difficulty_selection);
-                    }
-                    Err(_) => {
-                        panic!("You did not select a valid difficulty.");
-                    }
+                let selection = Select::new("Please select a difficulty:", options).prompt();
+                match selection {
+                    Ok(selection) => difficulty = Some(selection),
+                    Err(_) => panic!("You did not select a valid difficulty."),
                 }
             }
         }
     }
 
-    let legal_gamemodes = map_config
+    let mut options = map_config
         .get(difficulty.clone().unwrap().as_ref())
         .unwrap()
         .implemented_gamemodes();
+    options.sort();
+
     let mut gamemode = args.gamemode.clone();
 
     match gamemode {
         Some(ref gamemode) => {
-            if !legal_gamemodes.contains(gamemode) {
+            if !options.contains(gamemode) {
                 panic!("The gamemode provided is not a legal gamemode for the map and difficulty provided.");
             }
         }
         None => {
-            if legal_gamemodes.len() == 0 {
+            if options.len() == 0 {
                 panic!("There are no gamemodes available for the map and difficulty provided.");
-            } else if legal_gamemodes.len() == 1 {
-                gamemode = Some(legal_gamemodes[0].clone());
+            } else if options.len() == 1 {
+                gamemode = Some(options[0].clone());
                 println!(
                     "Only one gamemode available, selecting \"{}\"",
                     gamemode.clone().unwrap()
                 );
             } else {
-                let gamemode_selection =
-                    Select::new("Please select a gamemode:", legal_gamemodes).prompt();
-                match gamemode_selection {
-                    Ok(gamemode_selection) => {
-                        gamemode = Some(gamemode_selection);
-                    }
-                    Err(_) => {
-                        panic!("You did not select a valid gamemode.");
-                    }
+                let selection = Select::new("Please select a gamemode:", options).prompt();
+                match selection {
+                    Ok(selection) => gamemode = Some(selection),
+                    Err(_) => panic!("You did not select a valid gamemode."),
                 }
             }
         }
     }
 
     // Set the value of CURRENT_MAP to the map, difficulty, and gamemode selected
-    {
-        let map = map_config
-            .get(difficulty.clone().unwrap().as_ref())
-            .unwrap()
-            .get(gamemode.clone().unwrap().as_ref())
-            .unwrap()
-            .clone();
-        let mut current_map_write_lock = lib::global::CURRENT_MAP.write().unwrap();
-        *current_map_write_lock = Some(map);
-    }
+    load_map(map_config, difficulty.clone(), gamemode.clone());
 
     // Read the current map and print it
     let current_map_read_lock = lib::global::CURRENT_MAP.read().unwrap();
