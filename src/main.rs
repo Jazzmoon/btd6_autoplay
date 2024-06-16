@@ -12,14 +12,139 @@ mod models {
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
-use inquire::Select;
 use lib::global::{CONFIG_PATH, DEBUG, HOTKEYS, MAPS_PATH, MAP_CONFIG, SETTINGS};
 use models::hotkeys::Hotkeys;
 use models::map::MapConfig;
 use models::settings::Settings;
 
 use clap::Parser;
+use device_query::{DeviceEvents, DeviceState, Keycode, MousePosition};
+use inquire::Select;
+
+#[derive(Debug, Clone, Copy)]
+enum LocationFinderMode {
+    SinglePoint,
+    AreaSelection,
+}
+
+fn location_finder() {
+    // This is a tool that acts as an infinite loop that prints the current mouse position when you left click
+    // When you press the letter 'q', the program will exit
+    // Pressing 'p' will pause the program so you can interact with your system without logging mouse positions
+    // Pressing 'p' again will resume the program
+    // Pressing 'm' changes the mode from single click to area selection
+    // Print help dialog for the functionality of the program
+    println!("Welcome to the location finder utility!");
+    println!("Press 'q' to exit the program");
+    println!("Press 'p' to pause/resume the program");
+    println!("Press 'm' to change the mode from single point to area selection mode");
+
+    let paused = Arc::new(AtomicBool::new(false));
+    let mode = Arc::new(Mutex::new(LocationFinderMode::SinglePoint));
+
+    let area_mode_first_coordinate: Arc<Mutex<Option<MousePosition>>> = Arc::new(Mutex::new(None));
+
+    let selection = Select::new(
+        "Please select a mode:",
+        vec!["Single Point", "Area Selection"],
+    )
+    .prompt();
+
+    match selection {
+        Ok(selection) => {
+            let mut mode_lock = mode.lock().unwrap();
+            *mode_lock = match selection {
+                "Single Point" => LocationFinderMode::SinglePoint,
+                "Area Selection" => LocationFinderMode::AreaSelection,
+                _ => panic!("You did not select a valid mode."),
+            };
+            println!("{} mode selected", selection);
+        }
+        Err(_) => panic!("You did not select a valid mode."),
+    }
+
+    let device_state = DeviceState::new();
+    let mouse_coords = Arc::new(Mutex::new(device_state.query_pointer().coords));
+
+    let paused_clone = Arc::clone(&paused);
+    let mode_clone = Arc::clone(&mode);
+    let _guard = device_state.on_key_up(move |key| {
+        if key.eq(&Keycode::Q) {
+            std::process::exit(0);
+        } else if key.eq(&Keycode::P) {
+            let paused = paused_clone.load(Ordering::SeqCst);
+            paused_clone.store(!paused, Ordering::SeqCst);
+            if !paused {
+                println!("Program paused");
+            } else {
+                println!("Program resumed");
+            }
+        } else if key.eq(&Keycode::M) {
+            let paused = paused_clone.load(Ordering::SeqCst);
+            if !paused {
+                let mut mode_lock = mode_clone.lock().unwrap();
+                *mode_lock = match *mode_lock {
+                    LocationFinderMode::SinglePoint => LocationFinderMode::AreaSelection,
+                    LocationFinderMode::AreaSelection => LocationFinderMode::SinglePoint,
+                };
+                println!("Mode changed to {:?}", *mode_lock);
+            }
+        }
+    });
+
+    let paused_clone = Arc::clone(&paused);
+    let mouse_coords_clone = Arc::clone(&mouse_coords);
+    let _guard = device_state.on_mouse_move(move |coords| {
+        let paused = paused_clone.load(Ordering::SeqCst);
+        if paused {
+            return;
+        }
+        let mut mouse_coords = mouse_coords_clone.lock().unwrap();
+        *mouse_coords = coords.clone();
+    });
+
+    let paused_clone = Arc::clone(&paused);
+    let mode_clone = Arc::clone(&mode);
+    let mouse_coords_clone = Arc::clone(&mouse_coords);
+    let area_mode_first_coordinate_clone = Arc::clone(&area_mode_first_coordinate);
+    let _guard = device_state.on_mouse_up(move |button| {
+        if *button != 1 {
+            return;
+        }
+        let paused = paused_clone.load(Ordering::SeqCst);
+        if paused {
+            return;
+        }
+        let coords = mouse_coords_clone.lock().unwrap().clone();
+        let mode_lock = mode_clone.lock().unwrap();
+        match *mode_lock {
+            LocationFinderMode::SinglePoint => println!("Mouse position: {:?}", coords),
+            LocationFinderMode::AreaSelection => {
+                let mut area_mode_first_coordinate =
+                    area_mode_first_coordinate_clone.lock().unwrap();
+                match *area_mode_first_coordinate {
+                    Some(area_mode_first_coordinate_val) => {
+                        // Build a CoordsArea object and print it
+                        let coords_area: models::coords::CoordsArea = models::coords::CoordsArea {
+                            x: area_mode_first_coordinate_val.0,
+                            y: area_mode_first_coordinate_val.1,
+                            w: coords.0 - area_mode_first_coordinate_val.0,
+                            h: coords.1 - area_mode_first_coordinate_val.1,
+                        };
+                        *area_mode_first_coordinate = None;
+                        println!("{:?}", coords_area);
+                    }
+                    None => *area_mode_first_coordinate = Some(coords),
+                }
+            }
+        }
+    });
+
+    loop {}
+}
 
 fn map_config_name_to_map_name(map_config_name: &str) -> String {
     // Translate file name from "DarkCastle.yaml" to "Dark Castle"
@@ -117,6 +242,11 @@ fn main() {
     if args.debug {
         let mut debug_write_lock = DEBUG.write().unwrap();
         *debug_write_lock = true;
+    }
+
+    if args.location_finder {
+        location_finder();
+        return;
     }
 
     if !CONFIG_PATH.exists() {

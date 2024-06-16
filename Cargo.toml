@@ -1,11 +1,12 @@
 [package]
 name = "btd6_autoplay"
-author = "Jazzmoon <contact@jazzmoon.ca>"
+authors = ["Cameron Maclean <BowsiePup@users.noreply.github.com>", "Mark Hutchison <MoonstarCoding@users.noreply.github.com>"]
 version = "3.0.0"
 edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.7", features = ["derive"] }
+device_query = "2.1.0"
 enigo = "0.2.1"
 inquire = "0.7.5"
 lazy_static = "1.4.0"
