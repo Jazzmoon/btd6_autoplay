@@ -21,7 +21,9 @@ use models::map::MapConfig;
 use models::settings::Settings;
 
 use clap::Parser;
-use device_query::{DeviceEvents, DeviceState, Keycode, MousePosition};
+use device_query::{DeviceEvents, DeviceState, Keycode};
+use enigo::{Enigo, Mouse, Settings as EnigoSettings};
+
 use inquire::Select;
 
 #[derive(Debug, Clone, Copy)]
@@ -44,8 +46,7 @@ fn location_finder() {
 
     let paused = Arc::new(AtomicBool::new(false));
     let mode = Arc::new(Mutex::new(LocationFinderMode::SinglePoint));
-
-    let area_mode_first_coordinate: Arc<Mutex<Option<MousePosition>>> = Arc::new(Mutex::new(None));
+    let area_mode_first_coordinate: Arc<Mutex<Option<(i32, i32)>>> = Arc::new(Mutex::new(None));
 
     let selection = Select::new(
         "Please select a mode:",
@@ -67,7 +68,6 @@ fn location_finder() {
     }
 
     let device_state = DeviceState::new();
-    let mouse_coords = Arc::new(Mutex::new(device_state.query_pointer().coords));
 
     let paused_clone = Arc::clone(&paused);
     let mode_clone = Arc::clone(&mode);
@@ -96,29 +96,19 @@ fn location_finder() {
     });
 
     let paused_clone = Arc::clone(&paused);
-    let mouse_coords_clone = Arc::clone(&mouse_coords);
-    let _guard = device_state.on_mouse_move(move |coords| {
-        let paused = paused_clone.load(Ordering::SeqCst);
-        if paused {
-            return;
-        }
-        let mut mouse_coords = mouse_coords_clone.lock().unwrap();
-        *mouse_coords = coords.clone();
-    });
-
-    let paused_clone = Arc::clone(&paused);
     let mode_clone = Arc::clone(&mode);
-    let mouse_coords_clone = Arc::clone(&mouse_coords);
     let area_mode_first_coordinate_clone = Arc::clone(&area_mode_first_coordinate);
     let _guard = device_state.on_mouse_up(move |button| {
         if *button != 1 {
             return;
         }
-        let paused = paused_clone.load(Ordering::SeqCst);
-        if paused {
+        if paused_clone.load(Ordering::SeqCst) {
             return;
         }
-        let coords = mouse_coords_clone.lock().unwrap().clone();
+        let coords = Enigo::new(&EnigoSettings::default())
+            .unwrap()
+            .location()
+            .unwrap_or((0, 0));
         let mode_lock = mode_clone.lock().unwrap();
         match *mode_lock {
             LocationFinderMode::SinglePoint => println!("Mouse position: {:?}", coords),
