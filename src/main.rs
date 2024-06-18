@@ -15,7 +15,7 @@ use std::io::BufReader;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use lib::global::{CONFIG_PATH, DEBUG, HOTKEYS, MAPS_PATH, MAP_CONFIG, SETTINGS};
+use lib::global::{CONFIG_PATH, DEBUG, ENIGO_SETTINGS, HOTKEYS, MAPS_PATH, MAP_CONFIG, SETTINGS};
 use models::hotkeys::Hotkeys;
 use models::map::MapConfig;
 use models::settings::Settings;
@@ -105,10 +105,20 @@ fn location_finder() {
         if paused_clone.load(Ordering::SeqCst) {
             return;
         }
-        let coords = Enigo::new(&EnigoSettings::default())
-            .unwrap()
-            .location()
-            .unwrap_or((0, 0));
+        let enigo_settings_lock = ENIGO_SETTINGS.read().unwrap();
+        let coords = match enigo_settings_lock.as_ref() {
+            Some(enigo_settings) => Enigo::new(enigo_settings)
+                .unwrap()
+                .location()
+                .unwrap_or((0, 0)),
+            None => {
+                let default_settings = EnigoSettings::default();
+                Enigo::new(&default_settings)
+                    .unwrap()
+                    .location()
+                    .unwrap_or((0, 0))
+            }
+        };
         let mode_lock = mode_clone.lock().unwrap();
         match *mode_lock {
             LocationFinderMode::SinglePoint => println!("Mouse position: {:?}", coords),
@@ -230,8 +240,16 @@ fn main() {
     let args = Args::parse();
 
     if args.debug {
-        let mut debug_write_lock = DEBUG.write().unwrap();
-        *debug_write_lock = true;
+        DEBUG.store(true, Ordering::SeqCst);
+    }
+
+    {
+        let mut enigo_settings_write_lock = lib::global::ENIGO_SETTINGS.write().unwrap();
+        *enigo_settings_write_lock = Some(EnigoSettings {
+            linux_delay: 10,
+            mac_delay: 10,
+            ..Default::default()
+        });
     }
 
     if args.location_finder {
