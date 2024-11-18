@@ -29,8 +29,11 @@ game:
   confirm_button:
     x: 1521
     y: 973
+  home_button:
+    x: 1128
+    y: 1115
   round_counter:
-    x: 1835
-    y: 38
-    w: 246
-    h: 64
+    x: 1827
+    y: 44
+    w: 256
+    h: 54

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use struct_iterable::Iterable;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum OnWinAction {
     #[serde(rename = "continue")]
     Continue,
@@ -14,14 +14,13 @@ pub enum OnWinAction {
     EndGame,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum RoundCounterMode {
     #[serde(rename = "dark")]
     Dark,
     #[serde(rename = "light")]
     Light,
 }
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Map {
     pub money_per_game: Option<i32>,
