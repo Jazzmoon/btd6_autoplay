@@ -1,4 +1,4 @@
-use crate::models::coords::{Coords, CoordsArea};
+use super::coords::{Coords, CoordsArea};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

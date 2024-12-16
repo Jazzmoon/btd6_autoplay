@@ -1,15 +1,16 @@
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
-use std::sync::RwLock;
+use std::sync::{atomic::AtomicBool, RwLock};
 
 use enigo::Settings as EnigoSettings;
-use xcap::Window;
-use lazy_static::lazy_static;
 use fragile::Fragile;
+use lazy_static::lazy_static;
+use xcap::Window;
 
-use crate::models::hotkeys::Hotkeys;
-use crate::models::map::{Map, MapConfig};
-use crate::models::settings::Settings;
+use crate::models::{
+    hotkeys::Hotkeys,
+    map::{Map, MapConfig},
+    settings::Settings,
+};
 
 lazy_static! {
     pub static ref CURRENT_WINDOW: RwLock<Option<Fragile<Window>>> = RwLock::new(None);

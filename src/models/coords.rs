@@ -6,12 +6,6 @@ pub struct Coords {
     pub y: i32,
 }
 
-// impl Coords {
-//     fn new(x: i32, y: i32) -> Coords {
-//         Coords { x, y }
-//     }
-// }
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CoordsArea {
     pub x: i32,
@@ -19,9 +13,3 @@ pub struct CoordsArea {
     pub w: i32,
     pub h: i32,
 }
-
-// impl CoordsArea {
-//     fn new(x: i32, y: i32, w: i32, h: i32) -> CoordsArea {
-//         CoordsArea { x, y, w, h }
-//     }
-// }

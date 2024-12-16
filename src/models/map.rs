@@ -1,5 +1,4 @@
-use crate::models::coords::Coords;
-use crate::models::tower::Tower;
+use super::{coords::Coords, tower::Tower};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use struct_iterable::Iterable;

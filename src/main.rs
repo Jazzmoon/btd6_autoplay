@@ -1,253 +1,25 @@
-mod utils {
-    pub mod screenshot;
-}
-mod lib {
-    pub mod global;
-}
-mod models {
-    pub mod coords;
-    pub mod hotkeys;
-    pub mod map;
-    pub mod settings;
-    pub mod tower;
-}
-
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::BufReader;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::Ordering;
 use std::thread::sleep;
 use std::time::Duration;
 
 use clap::Parser;
-use device_query::{DeviceEvents, DeviceState, Keycode};
-use enigo::{Enigo, Mouse, Settings as EnigoSettings};
+use enigo::Settings as EnigoSettings;
 use fragile::Fragile;
 use inquire::Select;
-use rusty_tesseract::Args as RTArgs;
-use xcap::{Window/*, Monitor */};
+use rusty_tesseract::{image_to_string, Args as RTArgs};
+use xcap::Window;
 
-use lib::global::{CURRENT_WINDOW, CONFIG_PATH, DEBUG, ENIGO_SETTINGS, HOTKEYS, MAP_CONFIG, SETTINGS};
-use models::coords::CoordsArea;
-use models::hotkeys::Hotkeys;
-use models::map::{MapConfig, RoundCounterMode};
-use models::settings::Settings;
-use utils::screenshot::{capture_area, convert_to_rusty_image, ImageProcessingType};
-
-#[derive(Debug, Clone, Copy)]
-enum LocationFinderMode {
-    SinglePoint,
-    AreaSelection,
-}
-
-fn location_finder(window_x: i32, window_y: i32) {
-    // This is a tool that acts as an infinite loop that prints the current mouse position when you left click
-    // When you press the letter 'q', the program will exit
-    // Pressing 'p' will pause the program so you can interact with your system without logging mouse positions
-    // Pressing 'p' again will resume the program
-    // Pressing 'm' changes the mode from single click to area selection
-    // Print help dialog for the functionality of the program
-    println!("Welcome to the location finder utility!");
-    println!("Press 'q' to exit the program");
-    println!("Press 'p' to pause/resume the program");
-    println!("Press 'm' to change the mode from single point to area selection mode\n");
-
-    let paused = Arc::new(AtomicBool::new(false));
-    let mode = Arc::new(Mutex::new(LocationFinderMode::SinglePoint));
-    let area_mode_first_coordinate: Arc<Mutex<Option<(i32, i32)>>> = Arc::new(Mutex::new(None));
-    let device_state = DeviceState::new();
-
-    let paused_clone = Arc::clone(&paused);
-    let mode_clone = Arc::clone(&mode);
-    let _guard = device_state.on_key_up(move |key| {
-        if key.eq(&Keycode::Q) {
-            println!("Exiting program");
-            std::process::exit(0);
-        } else if key.eq(&Keycode::P) {
-            let paused = paused_clone.load(Ordering::SeqCst);
-            paused_clone.store(!paused, Ordering::SeqCst);
-            if !paused {
-                println!("Program paused");
-            } else {
-                println!("Program resumed");
-            }
-        } else if key.eq(&Keycode::M) {
-            let paused = paused_clone.load(Ordering::SeqCst);
-            if !paused {
-                let mut mode_lock = mode_clone.lock().unwrap();
-                *mode_lock = match *mode_lock {
-                    LocationFinderMode::SinglePoint => LocationFinderMode::AreaSelection,
-                    LocationFinderMode::AreaSelection => LocationFinderMode::SinglePoint,
-                };
-                println!("Mode changed to {:?}", *mode_lock);
-            }
-        }
-    });
-
-    let paused_clone = Arc::clone(&paused);
-    let mode_clone = Arc::clone(&mode);
-    let area_mode_first_coordinate_clone = Arc::clone(&area_mode_first_coordinate);
-    let _guard = device_state.on_mouse_up(move |button| {
-        if *button != 1 {
-            return;
-        }
-        if paused_clone.load(Ordering::SeqCst) {
-            return;
-        }
-        let enigo_settings_lock = ENIGO_SETTINGS.read().unwrap();
-        let coords = match enigo_settings_lock.as_ref() {
-            Some(enigo_settings) => Enigo::new(enigo_settings)
-                .unwrap()
-                .location()
-                .unwrap_or((0, 0)),
-            None => {
-                let default_settings = EnigoSettings::default();
-                Enigo::new(&default_settings)
-                    .unwrap()
-                    .location()
-                    .unwrap_or((0, 0))
-            }
-        };
-        let mode_lock = mode_clone.lock().unwrap();
-        match *mode_lock {
-            LocationFinderMode::SinglePoint => {
-                // Print two messages: Absolute coordinates and relative coordinates to window x and y
-                let coords_s = (coords.0 - window_x, coords.1 - window_y);
-                println!("Relative to Game Window: {:?}", coords_s);
-            },
-            LocationFinderMode::AreaSelection => {
-                let mut area_mode_first_coordinate =
-                    area_mode_first_coordinate_clone.lock().unwrap();
-                match *area_mode_first_coordinate {
-                    Some(area_mode_first_coordinate_val) => {
-
-                        let first_x = area_mode_first_coordinate_val.0 - window_x;
-                        let first_y = area_mode_first_coordinate_val.1 - window_y;
-
-                        let second_x = coords.0 - window_x;
-                        let second_y = coords.1 - window_y;
-
-                        let x: i32;
-                        let y: i32;
-                        let w: i32;
-                        let h: i32;
-
-                        // First point is either top-left, top-right, bottom-left, or bottom-right
-                        // But the coords area ALWAYS needs x and y to be the top-left corner
-
-                        if first_x < second_x && first_y < second_y { // Top-Left
-                            x = first_x;
-                            y = first_y;
-                            w = second_x - first_x;
-                            h = second_y - first_y;
-                        } else if first_x >= second_x && first_y < second_y { // Top-Right
-                            x = second_x;
-                            y = first_y;
-                            w = first_x - second_x;
-                            h = second_y - first_y;
-                        } else if first_x < second_x && first_y > second_y { // Bottom-Left
-                            x = first_x;
-                            y = second_y;
-                            w = second_x - first_x;
-                            h = first_y - second_y;
-                        } else { // Bottom-Right
-                            x = second_x;
-                            y = second_y;
-                            w = first_x - second_x;
-                            h = first_y - second_y;
-                        }
-
-                        let coords_area = CoordsArea { x, y, w, h };
-                        println!("{:?}", coords_area);
-                        *area_mode_first_coordinate = None;
-                    }
-                    None => {
-                        *area_mode_first_coordinate = Some((coords.0, coords.1));
-                    },
-                }
-            }
-        }
-    });
-
-    println!("Starting coordinate finder in Single Point mode...");
-    loop {}
-}
-
-fn map_config_name_to_map_name(map_config_name: &str) -> String {
-    // Translate file name from "DarkCastle.yaml" to "Dark Castle"
-    let mut map_name = String::new();
-    for (index, c) in map_config_name.chars().enumerate() {
-        if c == '-' {
-            map_name.push(' ');
-            continue;
-        } else if c.is_uppercase() && index != 0 {
-            map_name.push(' ');
-        } else if c == '.' {
-            break;
-        }
-        map_name.push(c);
-    }
-    map_name
-}
-
-fn load_settings() -> Settings {
-    let settings_path: PathBuf;
-    {
-        let settings_path_read_lock = CONFIG_PATH.read().unwrap();
-        settings_path = settings_path_read_lock.as_ref().unwrap().join("Settings.yaml");
-    }
-    let file = File::open(settings_path).unwrap();
-    let reader = BufReader::new(file);
-    let settings: Settings = serde_yaml::from_reader(reader).unwrap();
-    let mut settings_write_lock = SETTINGS.write().unwrap();
-    *settings_write_lock = Some(settings.clone());
-    settings
-}
-
-fn load_hotkeys() -> Hotkeys {
-    let hotkeys_path: PathBuf;
-    {
-        let hotkeys_path_read_lock = CONFIG_PATH.read().unwrap();
-        hotkeys_path = hotkeys_path_read_lock.as_ref().unwrap().parent().unwrap().join("Hotkeys.yaml");
-    }
-
-    if hotkeys_path.exists() == false {
-        panic!("The config/Hotkeys.yaml file does not exist. Please create it and add the necessary hotkeys.");
-    }
-    let file = File::open(hotkeys_path).unwrap();
-    let reader = BufReader::new(file);
-    let hotkeys: Hotkeys = serde_yaml::from_reader(reader).unwrap();
-    let mut hotkeys_write_lock = HOTKEYS.write().unwrap();
-    *hotkeys_write_lock = Some(hotkeys.clone());
-    hotkeys
-}
-
-fn load_map_config(map_file_name: Option<String>) {
-    let map_path: PathBuf;
-    {
-        let config_path_read_lock = CONFIG_PATH.read().unwrap();
-        map_path = config_path_read_lock.as_ref().unwrap().join("maps").join(map_file_name.as_ref().unwrap());
-    }
-
-    let file = File::open(map_path).unwrap();
-    let reader = BufReader::new(file);
-    let map: models::map::MapConfig = serde_yaml::from_reader(reader).unwrap();
-    let mut map_write_lock = MAP_CONFIG.write().unwrap();
-    *map_write_lock = Some(map);
-}
-
-fn load_map(map_config: &MapConfig, difficulty: Option<String>, gamemode: Option<String>) {
-    let map = map_config
-        .get(difficulty.unwrap().as_ref())
-        .unwrap()
-        .get(gamemode.unwrap().as_ref())
-        .unwrap()
-        .clone();
-    let mut current_map_write_lock = lib::global::CURRENT_MAP.write().unwrap();
-    *current_map_write_lock = Some(map);
-}
+use btd6_autoplay::models::map::RoundCounterMode;
+use btd6_autoplay::utils::{
+    global::{CONFIG_PATH, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, MAP_CONFIG},
+    location_finder::location_finder,
+    parsing::{
+        load_hotkeys, load_map, load_map_config, load_settings, map_config_name_to_map_name,
+    },
+    screenshot::{capture_area, capture_screenshot, convert_to_rusty_image, ImageProcessingType},
+};
 
 #[derive(Parser, Debug)]
 #[clap(version = "3.0.0")]
@@ -290,7 +62,7 @@ fn main() {
     }
 
     {
-        let mut enigo_settings_write_lock = lib::global::ENIGO_SETTINGS.write().unwrap();
+        let mut enigo_settings_write_lock = ENIGO_SETTINGS.write().unwrap();
         *enigo_settings_write_lock = Some(EnigoSettings {
             linux_delay: 10,
             mac_delay: 10,
@@ -299,7 +71,10 @@ fn main() {
     }
 
     // Sleep for 5 seconds to allow the user to switch to the BloonsTD6.exe window
-    println!("Please make sure the BloonsTD6.exe window is in focus within the next {:?} seconds.", args.sleep);
+    println!(
+        "Please make sure the BloonsTD6.exe window is in focus within the next {:?} seconds.",
+        args.sleep
+    );
     sleep(Duration::from_secs(args.sleep));
 
     // Load all Windows and locate the BloonsTD6.exe executable
@@ -322,17 +97,22 @@ fn main() {
         panic!("The BloonsTD6.exe window is minimized. Please open the game and try again.");
     }
 
-    let (window_x ,window_y, window_width, window_height) = (window.x(), window.y(), window.width(), window.height());
+    let (window_x, window_y, window_width, window_height) =
+        (window.x(), window.y(), window.width(), window.height());
 
     {
         let mut config_path_write_lock = CONFIG_PATH.write().unwrap();
-        *config_path_write_lock = Some(PathBuf::from("./config/").join(format!("{}x{}", window_width, window_height).as_str()));
+        *config_path_write_lock = Some(
+            PathBuf::from("./config/").join(format!("{}x{}", window_width, window_height).as_str()),
+        );
         if !config_path_write_lock.as_ref().unwrap().exists() {
             panic!("The \"{}\" directory does not exist. Please create it and add the necessary settings.", config_path_write_lock.as_ref().unwrap().to_str().unwrap());
         }
-        println!("Using config path of {:?}", config_path_write_lock.as_ref().unwrap());
+        println!(
+            "Using config path of {:?}",
+            config_path_write_lock.as_ref().unwrap()
+        );
     }
-
 
     if args.location_finder {
         location_finder(window_x, window_y);
@@ -462,7 +242,10 @@ fn main() {
     load_map(map_config, difficulty.clone(), gamemode.clone());
 
     // Wait for the user to switch to the BloonsTD6.exe window
-    println!("Please make sure the BloonsTD6.exe window is in focus within the next {:?} seconds.", args.sleep);
+    println!(
+        "Please make sure the BloonsTD6.exe window is in focus within the next {:?} seconds.",
+        args.sleep
+    );
     sleep(Duration::from_secs(args.sleep));
 
     // Read the current map and print it
@@ -470,16 +253,32 @@ fn main() {
     // let current_map = current_map_read_lock.as_ref().unwrap();
 
     // Load tesseract
-    let rt_args = RTArgs {
-        lang: "eng".into(),
-        config_variables: HashMap::from([(
-            "tessedit_char_whitelist".into(),
-            "1234567890/".into(),
-        )]),
-        dpi: Some(150),
-        psm: Some(6),
-        oem: Some(3),
-    };
+    let (rt_round_args, rt_victory_args, rt_defeat_args) = (
+        RTArgs {
+            lang: "eng".into(),
+            config_variables: HashMap::from([(
+                "tessedit_char_whitelist".into(),
+                "0123456789/".into(),
+            )]),
+            dpi: Some(150),
+            psm: Some(6),
+            oem: Some(3),
+        },
+        RTArgs {
+            lang: "eng".into(),
+            config_variables: HashMap::from([("tessedit_char_whitelist".into(), "VICTORY".into())]),
+            dpi: Some(150),
+            psm: Some(6),
+            oem: Some(3),
+        },
+        RTArgs {
+            lang: "eng".into(),
+            config_variables: HashMap::from([("tessedit_char_whitelist".into(), "DeFeAT".into())]),
+            dpi: Some(300),
+            psm: Some(6),
+            oem: Some(3),
+        },
+    );
 
     let mut threshold_value = 1;
     {
@@ -490,23 +289,176 @@ fn main() {
         }
     }
 
-    loop {
+    let mut last_seen_round = 0;
+    let mut empty_round_counter_count = 0;
+    let (mut game_wins, mut game_losses) = (0, 0);
+
+    while args.number == -1 || game_wins + game_losses < args.number {
         // Get screenshot of the game window
-        let screenshot = capture_area(
+        let screenshot = capture_screenshot();
+
+        // Do round counter processing
+        let processing_actions = ImageProcessingType::Resize
+            | ImageProcessingType::Grayscale
+            | ImageProcessingType::SkewVertical
+            | ImageProcessingType::Invert;
+
+        let round_counter = capture_area(
+            screenshot.clone(),
             settings.game.round_counter.clone(),
-            ImageProcessingType::Resize        |
-            ImageProcessingType::Grayscale     |
-            ImageProcessingType::FloodFill     |
-            ImageProcessingType::SheerVertical |
-            ImageProcessingType::Invert,
+            processing_actions,
             Some(threshold_value),
-            Some(0.5)
+            Some(0.5),
         );
-        let rt_image = convert_to_rusty_image(screenshot);
+
+        let _ = round_counter.save("debug/round_counter.png");
 
         // Get the round counter from the screenshot
-        let output = rusty_tesseract::image_to_string(&rt_image, &rt_args).unwrap();
-        println!("The round counter is: {}", output);
+        let output = image_to_string(&convert_to_rusty_image(round_counter), &rt_round_args)
+            .unwrap()
+            .trim()
+            .to_string();
+
+        // Check if the round counter is empty -- Which will trigger our "Chick winner" check
+        if output.is_empty() {
+            empty_round_counter_count += 1;
+
+            if empty_round_counter_count >= 2 {
+                empty_round_counter_count = 0;
+
+                let processing_actions = ImageProcessingType::Resize
+                    | ImageProcessingType::Grayscale
+                    | ImageProcessingType::Invert;
+                let did_win: bool;
+
+                let (victory_image, defeat_image) = (
+                    capture_area(
+                        screenshot.clone(),
+                        settings.game.victory_banner.clone(),
+                        ImageProcessingType::None,
+                        None,
+                        None,
+                    ),
+                    capture_area(
+                        screenshot.clone(),
+                        settings.game.defeat_banner.clone(),
+                        processing_actions,
+                        Some(200),
+                        Some(0.9),
+                    ),
+                );
+
+                let _ = victory_image.save("debug/victory_banner.png");
+                let _ = defeat_image.save("debug/defeat_banner.png");
+
+                let (victory_banner, defeat_banner) = (
+                    image_to_string(&convert_to_rusty_image(victory_image), &rt_victory_args),
+                    image_to_string(&convert_to_rusty_image(defeat_image), &rt_defeat_args),
+                );
+
+                match (victory_banner, defeat_banner) {
+                    (Ok(victory_s), Ok(defeat_s)) => {
+                        let victory = victory_s.trim().to_string().to_uppercase();
+
+                        //* NOTE: DEFEAT doesn't see the middle `e` character for some reason. It sees DEFAT...
+                        let defeat = defeat_s.trim().to_string().to_uppercase();
+
+                        if (victory.is_empty() && defeat.is_empty())
+                            || (!victory.contains("VICTORY")
+                                && !(defeat.starts_with("DE") && defeat.ends_with("AT")))
+                        {
+                            sleep(Duration::from_secs(1));
+                            continue;
+                        }
+                        did_win = victory.contains("VICTORY");
+                    }
+                    (Ok(victory_s), Err(_)) => {
+                        let victory = victory_s.trim().to_string().to_uppercase();
+                        if victory.is_empty() || !victory.contains("VICTORY") {
+                            sleep(Duration::from_secs(1));
+                            continue;
+                        }
+                        did_win = true;
+                    }
+                    (Err(_), Ok(defeat_s)) => {
+                        //* NOTE: DEFEAT doesn't see the middle `e` character for some reason. It sees DEFAT...
+                        let defeat = defeat_s.trim().to_string().to_uppercase();
+
+                        if defeat.is_empty()
+                            || !(defeat.starts_with("DE") && defeat.ends_with("AT"))
+                        {
+                            sleep(Duration::from_secs(1));
+                            continue;
+                        }
+                        did_win = false;
+                    }
+                    _ => {
+                        sleep(Duration::from_secs(1));
+                        continue;
+                    }
+                }
+
+                if did_win {
+                    println!("The game has ended. The player has won.");
+                    game_wins += 1;
+                } else {
+                    println!("The game has ended. The player has lost.");
+                    game_losses += 1;
+                }
+                continue;
+            }
+        }
+
+        println!("Output: '{}'", output);
+
+        let current_round: i32;
+        let total_rounds: i32;
+
+        // Check if the round counter has a '/' in it
+        if output.contains('/') {
+            // Split the round counter into the current round and the total rounds by the '/'
+            let round_counter: Vec<&str> = output.split('/').collect();
+            match (
+                round_counter[0].trim().parse::<i32>(),
+                round_counter[1].trim().parse::<i32>(),
+            ) {
+                (Ok(current), Ok(total)) => {
+                    current_round = current;
+                    total_rounds = total;
+                }
+                (Ok(current), Err(_)) => {
+                    current_round = current;
+                    total_rounds = -1;
+                }
+                _ => {
+                    sleep(Duration::from_secs(1));
+                    continue;
+                }
+            }
+        } else if let Ok(cr) = output.trim().parse::<i32>() {
+            // If the round counter does not have a '/', then the current round is the outpu
+            current_round = cr;
+            total_rounds = -1;
+        } else {
+            sleep(Duration::from_secs(1));
+            continue;
+        }
+
+        // If the round counter has changed, update the last seen round
+        if current_round != last_seen_round {
+            last_seen_round = current_round;
+
+            if total_rounds == -1 {
+                println!("The current round is: {}", current_round);
+            } else {
+                println!("The current round is: {}/{}", current_round, total_rounds);
+            }
+
+            // Save screenshot of the whole game window to the "screenshots" directory with the round number as the filename
+            let screenshot_path =
+                PathBuf::from("debug/screenshots").join(format!("{}.png", current_round));
+            let _ = screenshot.save(screenshot_path);
+        }
 
         sleep(Duration::from_secs(1));
     }

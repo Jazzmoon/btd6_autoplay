@@ -1,39 +1,39 @@
 screen:
-  x: 0
-  y: 0
-  w: 2560
-  h: 1140
+    x: 0
+    y: 0
+    w: 2560
+    h: 1140
 game:
-  victory_banner:
-    x: 782
-    y: 107
-    w: 1006
-    h: 249
-  defeat_banner:
-    x: 590
-    y: 584
-    w: 730
-    h: 115
-  next_button:
-    x: 1281
-    y: 1215
-  freeplay_button:
-    x: 1598
-    y: 1129
-  freeplay_ok_button:
-    x: 1279
-    y: 1012
-  restart_game_button:
-    x: 1426
-    y: 1121
-  confirm_button:
-    x: 1521
-    y: 973
-  home_button:
-    x: 1128
-    y: 1115
-  round_counter:
-    x: 1827
-    y: 44
-    w: 256
-    h: 54
+    victory_banner:
+        x: 782
+        y: 107
+        w: 1006
+        h: 249
+    defeat_banner:
+        x: 965
+        y: 382
+        w: 632
+        h: 156
+    next_button:
+        x: 1281
+        y: 1215
+    freeplay_button:
+        x: 1598
+        y: 1129
+    freeplay_ok_button:
+        x: 1279
+        y: 1012
+    restart_game_button:
+        x: 1426
+        y: 1121
+    confirm_button:
+        x: 1521
+        y: 973
+    home_button:
+        x: 1128
+        y: 1115
+    round_counter:
+        x: 1827
+        y: 46
+        w: 256
+        h: 50
