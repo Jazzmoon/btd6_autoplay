@@ -1,7 +1,7 @@
 use std::error::Error as StdError;
 
-use super::{actions, coords::Coords, tower::Tower};
-use crate::utils::global::{CURRENT_MAP, HOTKEYS};
+use super::{actions, actions::ability::AbilityType, coords::Coords, hotkeys::Hotkey};
+use crate::utils::global::HOTKEYS;
 
 pub trait ActionTrait {
     fn run(&self) -> Result<(), Box<dyn StdError>>;
@@ -15,19 +15,54 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
 
     match action_array[0] {
         "ability" => {
-            let ability_hotkey = action_array[1..].to_vec();
-            if ability_hotkey.len() < 1 || ability_hotkey.len() > 2 {
+            /*
+             * Ability action accepts one of 3 forms in the following order of priority:
+             | 1. coords (e.g. "100 240")
+             | 2. ability hotkey name (e.g. "road_spikes" or "super_monkey_storm")
+             | 3. ability hotkey (e.g. "shift 8" or "\")
+             * This means that you cannot use a custom combination of keys in which would be a valid coordinate.
+             */
+            let args = action_array[1..].to_vec();
+            if args.len() < 1 {
                 return Err(
-                    "Ability action requires 1 hotkey or a pair of (X,Y) coordinates.".into(),
+                    "Ability action string is invalid.".into(),
                 );
             }
-
-            // Convert the ability hotkey from Vec<&str> to Vec<String>
-            let ability_hotkey: Vec<String> =
-                ability_hotkey.iter().map(|x| x.to_string()).collect();
-
+            // Attempt to convert the ability hotkey to a Coords struct or Hotkey struct
+            if args.len() == 2 {
+                // Try parse as two integers
+                let coords = args
+                    .iter()
+                    .map(|x| x.parse::<i32>())
+                    .collect::<Result<Vec<i32>, _>>();
+                match coords {
+                    Ok(coords) => {
+                        if coords.len() == 2 {
+                            return Ok(Box::new(actions::ability::Ability {
+                                ability: AbilityType::Coords(Coords {
+                                    x: coords[0],
+                                    y: coords[1],
+                                }),
+                            }));
+                        }
+                    }
+                    Err(_) => {}
+                }
+            }
+            // Check if it is a hotkey in our struct
+            let hotkeys_read_lock = HOTKEYS.read().unwrap();
+            let hotkeys = hotkeys_read_lock.as_ref();
+            if hotkeys.is_none() {
+                return Err("Hotkeys not loaded.".into());
+            }
+            if hotkeys.unwrap().contains_key(args[0]) {
+                return Ok(Box::new(actions::ability::Ability {
+                    ability: AbilityType::Hotkey(hotkeys.unwrap().get(args[0])),
+                }));
+            }
+            // Array of vectors is just a series of keys to press
             return Ok(Box::new(actions::ability::Ability {
-                ability_keys: ability_hotkey,
+                ability: AbilityType::Hotkey(Hotkey::from(&args)),
             }));
         }
         "click" => {
@@ -104,7 +139,7 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
                     x: coords[0],
                     y: coords[1],
                 },
-                tower_hotkey: tower_hotkey,
+                tower_hotkey,
             }));
         }
         "sell" => {

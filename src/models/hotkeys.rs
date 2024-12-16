@@ -1,6 +1,63 @@
 use enigo::Key;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::ops::Index;
+
+lazy_static! {
+    static ref HOTKEY_KEYS: Vec<&'static str> = vec![
+        "start",
+        "pause",
+        "menu",
+        "sell",
+        "upgrade_top_path",
+        "upgrade_middle_path",
+        "upgrade_bottom_path",
+        "dart",
+        "boomerang",
+        "bomb",
+        "tack",
+        "ice",
+        "glue",
+        "sniper",
+        "sub",
+        "boat",
+        "ace",
+        "heli",
+        "mortar",
+        "dartling",
+        "wizard",
+        "super_monkey",
+        "ninja",
+        "alchemist",
+        "druid",
+        "mermonkey",
+        "farm",
+        "spike",
+        "village",
+        "engineer",
+        "beast",
+        "hero",
+        "target_priority_right",
+        "target_priority_left",
+        "target_priority_special",
+        "send_next_round",
+        "road_spikes",
+        "moab_mine",
+        "glue_trap",
+        "camo_trap",
+        "banana_farmer",
+        "tech_bot",
+        "energizing_totem",
+        "pontoon",
+        "portable_lake",
+        "super_monkey_storm",
+        "monkey_boost",
+        "thrive",
+        "time_stop",
+        "cash_drop",
+        "copy",
+    ];
+}
 
 pub fn string_to_key(key: String) -> Key {
     // Check length of key
@@ -96,6 +153,30 @@ impl Into<Vec<Key>> for Hotkey {
     }
 }
 
+impl From<Vec<String>> for Hotkey {
+    fn from(keys: Vec<String>) -> Self {
+        Hotkey(keys)
+    }
+}
+
+impl From<&Vec<String>> for Hotkey {
+    fn from(keys: &Vec<String>) -> Self {
+        Hotkey(keys.iter().map(|x| x.to_string()).collect())
+    }
+}
+
+impl From<Vec<&str>> for Hotkey {
+    fn from(keys: Vec<&str>) -> Self {
+        Hotkey(keys.iter().map(|x| x.to_string()).collect())
+    }
+}
+
+impl From<&Vec<&str>> for Hotkey {
+    fn from(keys: &Vec<&str>) -> Self {
+        Hotkey(keys.iter().map(|x| x.to_string()).collect())
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Hotkeys {
     pub start: Hotkey,
@@ -123,6 +204,7 @@ pub struct Hotkeys {
     pub ninja: Hotkey,
     pub alchemist: Hotkey,
     pub druid: Hotkey,
+    pub mermonkey: Hotkey,
     pub farm: Hotkey,
     pub spike: Hotkey,
     pub village: Hotkey,
@@ -180,6 +262,7 @@ impl Index<&str> for Hotkeys {
             "ninja" => &self.ninja,
             "alchemist" => &self.alchemist,
             "druid" => &self.druid,
+            "mermonkey" => &self.mermonkey,
             "farm" => &self.farm,
             "spike" => &self.spike,
             "village" => &self.village,
@@ -212,59 +295,17 @@ impl Index<&str> for Hotkeys {
 
 impl Hotkeys {
     pub fn contains_key(&self, key: &str) -> bool {
-        match key {
-            "start" => true,
-            "pause" => true,
-            "menu" => true,
-            "sell" => true,
-            "upgrade_top_path" => true,
-            "upgrade_middle_path" => true,
-            "upgrade_bottom_path" => true,
-            "dart" => true,
-            "boomerang" => true,
-            "bomb" => true,
-            "tack" => true,
-            "ice" => true,
-            "glue" => true,
-            "sniper" => true,
-            "sub" => true,
-            "boat" => true,
-            "ace" => true,
-            "heli" => true,
-            "mortar" => true,
-            "dartling" => true,
-            "wizard" => true,
-            "super_monkey" => true,
-            "ninja" => true,
-            "alchemist" => true,
-            "druid" => true,
-            "farm" => true,
-            "spike" => true,
-            "village" => true,
-            "engineer" => true,
-            "beast" => true,
-            "hero" => true,
-            "target_priority_right" => true,
-            "target_priority_left" => true,
-            "target_priority_special" => true,
-            "send_next_round" => true,
-            "road_spikes" => true,
-            "moab_mine" => true,
-            "glue_trap" => true,
-            "camo_trap" => true,
-            "banana_farmer" => true,
-            "tech_bot" => true,
-            "energizing_totem" => true,
-            "pontoon" => true,
-            "portable_lake" => true,
-            "super_monkey_storm" => true,
-            "monkey_boost" => true,
-            "thrive" => true,
-            "time_stop" => true,
-            "cash_drop" => true,
-            "copy" => true,
-            _ => false,
+        HOTKEY_KEYS.contains(&key)
+    }
+
+    // Return the key that contains the value if it exists, otherwise None
+    pub fn contains_value(&self, value: &Hotkey) -> Option<String> {
+        for key in HOTKEY_KEYS.iter() {
+            if self[key].0 == value.0 {
+                return Some(key.to_string());
+            }
         }
+        None
     }
 
     pub fn get(&self, key: &str) -> Hotkey {

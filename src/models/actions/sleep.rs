@@ -10,7 +10,6 @@ impl ActionTrait for Sleep {
     fn run(&self) -> Result<(), Box<dyn StdError>> {
         // Sleep for the specified time
         std::thread::sleep(std::time::Duration::from_secs(self.sleep_time));
-
         Ok(())
     }
 }
