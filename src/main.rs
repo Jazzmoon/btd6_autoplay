@@ -1,8 +1,10 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::atomic::Ordering;
-use std::thread::sleep;
-use std::time::Duration;
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    sync::atomic::Ordering,
+    thread::sleep,
+    time::Duration
+};
 
 use clap::Parser;
 use enigo::Settings as EnigoSettings;
@@ -11,14 +13,16 @@ use inquire::Select;
 use rusty_tesseract::{image_to_string, Args as RTArgs};
 use xcap::Window;
 
-use btd6_autoplay::models::map::RoundCounterMode;
-use btd6_autoplay::utils::{
-    global::{CONFIG_PATH, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, MAP_CONFIG},
-    location_finder::location_finder,
-    parsing::{
-        load_hotkeys, load_map, load_map_config, load_settings, map_config_name_to_map_name,
-    },
-    screenshot::{capture_area, capture_screenshot, convert_to_rusty_image, ImageProcessingType},
+use btd6_autoplay::{
+    models::{action_parser, map::RoundCounterMode},
+    utils::{
+        global::{CONFIG_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, MAP_CONFIG},
+        location_finder::location_finder,
+        parsing::{
+            load_hotkeys, load_map, load_map_config, load_settings, map_config_name_to_map_name,
+        },
+        screenshot::{capture_area, capture_screenshot, convert_to_rusty_image, ImageProcessingType},
+    }
 };
 
 #[derive(Parser, Debug)]
@@ -311,7 +315,9 @@ fn main() {
             Some(0.5),
         );
 
-        let _ = round_counter.save("debug/round_counter.png");
+        if args.debug {
+            let _ = round_counter.save("debug/round_counter.png");
+        }
 
         // Get the round counter from the screenshot
         let output = image_to_string(&convert_to_rusty_image(round_counter), &rt_round_args)
@@ -348,8 +354,10 @@ fn main() {
                     ),
                 );
 
-                let _ = victory_image.save("debug/victory_banner.png");
-                let _ = defeat_image.save("debug/defeat_banner.png");
+                if args.debug {
+                    let _ = victory_image.save("debug/victory_banner.png");
+                    let _ = defeat_image.save("debug/defeat_banner.png");
+                }
 
                 let (victory_banner, defeat_banner) = (
                     image_to_string(&convert_to_rusty_image(victory_image), &rt_victory_args),
@@ -455,9 +463,37 @@ fn main() {
             }
 
             // Save screenshot of the whole game window to the "screenshots" directory with the round number as the filename
-            let screenshot_path =
-                PathBuf::from("debug/screenshots").join(format!("{}.png", current_round));
-            let _ = screenshot.save(screenshot_path);
+            if args.debug {
+                let screenshot_path =
+                    PathBuf::from("debug/screenshots").join(format!("{}.png", current_round));
+                let _ = screenshot.save(screenshot_path);
+            }
+
+            // Check if there are any actions to take for the current round
+            let current_map_read_lock = CURRENT_MAP.read().unwrap();
+            let current_map = current_map_read_lock.as_ref().unwrap();
+            match current_map.instructions.get(&current_round) {
+                Some(actions) => {
+                    for action_str in actions {
+                        match action_parser::parse_action(action_str) {
+                            Ok(action) => {
+                                match action.run() {
+                                    Ok(_) => {
+                                        println!("Successfully ran action: {:?}", action_str);
+                                    }
+                                    Err(e) => {
+                                        println!("Failed to run action: {:?}", e);
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                println!("Action Parser failed to parse an action: {:?}", e);
+                            }
+                        }
+                    }
+                }
+                None => {}
+            }
         }
 
         sleep(Duration::from_secs(1));
