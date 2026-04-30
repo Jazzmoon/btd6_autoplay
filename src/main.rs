@@ -14,9 +14,10 @@ use rusty_tesseract::{image_to_string, Args as RTArgs};
 use xcap::Window;
 
 use btd6_autoplay::{
-    models::{action_parser, map::RoundCounterMode},
+    models::{action_parser, map::{OnWinAction, RoundCounterMode}},
     utils::{
-        global::{CONFIG_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, MAP_CONFIG},
+        global::{CONFIG_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, HOTKEYS, MAP_CONFIG},
+        interaction,
         location_finder::location_finder,
         parsing::{
             load_hotkeys, load_map, load_map_config, load_settings, map_config_name_to_map_name,
@@ -56,6 +57,39 @@ struct Args {
     /// Debug mode :3
     #[clap(long)]
     debug: bool,
+}
+
+/// Navigate the post-game UI and restart the current map from round 1.
+///
+/// Flow (mirrors the Python `Game.restart_game`):
+///   next → decline freeplay → Escape × 2 → restart → confirm
+///
+/// Also clears all placed tower state from `CURRENT_MAP` so the next
+/// game starts with a clean slate.
+fn restart_game(settings: &btd6_autoplay::models::settings::Settings) {
+    let menu_hotkey = {
+        let hotkeys_read_lock = HOTKEYS.read().unwrap();
+        hotkeys_read_lock.as_ref().unwrap().menu.clone()
+    };
+
+    // Click the "Next" button on the victory/defeat screen
+    let _ = interaction::click(settings.game.next_button.clone(), Some(2000));
+    // Decline the freeplay offer
+    let _ = interaction::click(settings.game.freeplay_button.clone(), Some(2000));
+    // Open the in-game menu (press Escape twice to get to the restart option)
+    let _ = interaction::press_key(menu_hotkey.clone(), Some(1000));
+    let _ = interaction::press_key(menu_hotkey, Some(1000));
+    // Click "Restart" and then confirm
+    let _ = interaction::click(settings.game.restart_game_button.clone(), Some(1000));
+    let _ = interaction::click(settings.game.confirm_button.clone(), Some(1000));
+
+    // Clear placed towers so the next game starts fresh
+    {
+        let mut current_map_write_lock = CURRENT_MAP.write().unwrap();
+        if let Some(current_map) = current_map_write_lock.as_mut() {
+            current_map.towers.clear();
+        }
+    }
 }
 
 fn main() {
@@ -413,6 +447,28 @@ fn main() {
                     println!("The game has ended. The player has lost.");
                     game_losses += 1;
                 }
+
+                let on_win_action = {
+                    let current_map_read_lock = CURRENT_MAP.read().unwrap();
+                    current_map_read_lock.as_ref().unwrap().on_win_action.clone()
+                };
+
+                match on_win_action {
+                    OnWinAction::Restart => {
+                        println!("Restarting game...");
+                        restart_game(&settings);
+                        last_seen_round = 0;
+                        empty_round_counter_count = 0;
+                    }
+                    OnWinAction::EndGame => {
+                        println!("EndGame action - exiting after {} win(s) and {} loss(es).", game_wins, game_losses);
+                        return;
+                    }
+                    OnWinAction::Continue => {
+                        // Stay in freeplay / do nothing – the outer loop will keep running
+                        println!("Continuing in freeplay...");
+                    }
+                }
                 continue;
             }
         }
@@ -469,30 +525,59 @@ fn main() {
                 let _ = screenshot.save(screenshot_path);
             }
 
-            // Check if there are any actions to take for the current round
-            let current_map_read_lock = CURRENT_MAP.read().unwrap();
-            let current_map = current_map_read_lock.as_ref().unwrap();
-            match current_map.instructions.get(&current_round) {
-                Some(actions) => {
-                    for action_str in actions {
-                        match action_parser::parse_action(action_str) {
-                            Ok(action) => {
-                                match action.run() {
-                                    Ok(_) => {
-                                        println!("Successfully ran action: {:?}", action_str);
-                                    }
-                                    Err(e) => {
-                                        println!("Failed to run action: {:?}", e);
-                                    }
-                                }
+            // Extract everything we need from CURRENT_MAP in a single read-lock scope,
+            // before executing actions (which may themselves acquire a write lock).
+            let (restart_on_round, on_win_action, round_actions) = {
+                let current_map_read_lock = CURRENT_MAP.read().unwrap();
+                let current_map = current_map_read_lock.as_ref().unwrap();
+                let actions = current_map
+                    .instructions
+                    .get(&current_round)
+                    .cloned()
+                    .unwrap_or_default();
+                (current_map.restart_on_round, current_map.on_win_action.clone(), actions)
+            };
+
+            for action_str in &round_actions {
+                match action_parser::parse_action(action_str) {
+                    Ok(action) => {
+                        match action.run() {
+                            Ok(_) => {
+                                println!("Successfully ran action: {:?}", action_str);
                             }
                             Err(e) => {
-                                println!("Action Parser failed to parse an action: {:?}", e);
+                                println!("Failed to run action: {:?}", e);
                             }
                         }
                     }
+                    Err(e) => {
+                        println!("Action Parser failed to parse an action: {:?}", e);
+                    }
                 }
-                None => {}
+            }
+
+            // If this round matches restart_on_round, trigger the restart sequence now
+            // (all towers have been placed; let the configured action decide what happens next)
+            if let Some(target_round) = restart_on_round {
+                if current_round == target_round {
+                    println!("Reached restart_on_round ({}), triggering restart.", target_round);
+                    match on_win_action {
+                        OnWinAction::Restart => {
+                            game_wins += 1;
+                            restart_game(&settings);
+                            last_seen_round = 0;
+                            empty_round_counter_count = 0;
+                        }
+                        OnWinAction::EndGame => {
+                            println!("EndGame action - exiting after {} win(s) and {} loss(es).", game_wins, game_losses);
+                            return;
+                        }
+                        OnWinAction::Continue => {
+                            // Nothing to do – let the game run in freeplay
+                            println!("Continuing in freeplay after reaching restart_on_round.");
+                        }
+                    }
+                }
             }
         }
 
