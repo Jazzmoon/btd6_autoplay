@@ -1,7 +1,9 @@
 use std::error::Error as StdError;
-
 use super::{actions, actions::ability::AbilityType, coords::Coords, hotkeys::Hotkey};
-use crate::utils::global::HOTKEYS;
+use crate::utils::global::{
+    CURRENT_WINDOW,
+    HOTKEYS,
+};
 
 pub trait ActionTrait {
     fn run(&self) -> Result<(), Box<dyn StdError>>;
@@ -38,11 +40,13 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
                 match coords {
                     Ok(coords) => {
                         if coords.len() == 2 {
+                            let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
+                            let current_window = current_window_read_lock.as_ref().unwrap().get();
                             return Ok(Box::new(actions::ability::Ability {
                                 ability: AbilityType::Coords(Coords {
                                     x: coords[0],
                                     y: coords[1],
-                                }),
+                                }.relative_to_window(current_window)),
                             }));
                         }
                     }
@@ -73,11 +77,13 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
             if coords.len() != 2 {
                 return Err("Click action requires 2 coordinates.".into());
             }
+            let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
+            let current_window = current_window_read_lock.as_ref().unwrap().get();
             return Ok(Box::new(actions::click::Click {
                 coords: Coords {
                     x: coords[0],
                     y: coords[1],
-                },
+                }.relative_to_window(current_window),
             }));
         }
         "hover" => {
@@ -88,11 +94,13 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
             if coords.len() != 2 {
                 return Err("Hover action requires 2 coordinates.".into());
             }
+            let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
+            let current_window = current_window_read_lock.as_ref().unwrap().get();
             return Ok(Box::new(actions::hover::Hover {
                 coords: Coords {
                     x: coords[0],
                     y: coords[1],
-                },
+                }.relative_to_window(current_window),
             }));
         }
         "obstacle" | "clear" => {
@@ -103,11 +111,13 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
             if coords.len() != 2 {
                 return Err("Obstacle action requires 2 coordinates.".into());
             }
+            let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
+            let current_window = current_window_read_lock.as_ref().unwrap().get();
             return Ok(Box::new(actions::obstacle::Obstacle {
                 coords: Coords {
                     x: coords[0],
                     y: coords[1],
-                },
+                }.relative_to_window(current_window),
             }));
         }
         "place" => {
@@ -132,13 +142,15 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
                 tower_hotkey = hotkeys.unwrap().get(tower_type_name);
             }
 
+            let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
+            let current_window = current_window_read_lock.as_ref().unwrap().get();
             return Ok(Box::new(actions::place::Place {
                 tower_name: tower_name.to_string(),
                 tower_type_name: tower_type_name.to_string(),
                 coords: Coords {
                     x: coords[0],
                     y: coords[1],
-                },
+                }.relative_to_window(current_window),
                 tower_hotkey,
             }));
         }
