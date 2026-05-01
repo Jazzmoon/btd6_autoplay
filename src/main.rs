@@ -166,7 +166,6 @@ fn main() {
         }
     }
 
-
     if bloons_td6_window.is_none() {
         // If we didn't find an obvious match, print what we saw to help debugging.
         if DEBUG.load(std::sync::atomic::Ordering::SeqCst) {

@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::{atomic::AtomicBool, RwLock};
+use std::sync::{Arc, atomic::AtomicBool, RwLock};
 
 use serde::{Deserialize, Serialize};
 use enigo::Settings as EnigoSettings;
@@ -19,14 +19,14 @@ pub struct GeneralConfig {
 }
 
 lazy_static! {
-    pub static ref CURRENT_WINDOW: RwLock<Option<Fragile<Window>>> = RwLock::new(None);
+    pub static ref CURRENT_WINDOW: Arc<RwLock<Option<Fragile<Window>>>> = Arc::new(RwLock::new(None));
     pub static ref CONFIG_BASE_PATH: PathBuf = PathBuf::from("./config");
-    pub static ref CONFIG_SCREEN_PATH: RwLock<Option<PathBuf>> = RwLock::new(None);
-    pub static ref ENIGO_SETTINGS: RwLock<Option<EnigoSettings>> = RwLock::new(None);
-    pub static ref SETTINGS: RwLock<Option<Settings>> = RwLock::new(None);
-    pub static ref GENERAL_CONFIG: RwLock<Option<GeneralConfig>> = RwLock::new(None);
-    pub static ref HOTKEYS: RwLock<Option<Hotkeys>> = RwLock::new(None);
-    pub static ref MAP_CONFIG: RwLock<Option<MapConfig>> = RwLock::new(None);
-    pub static ref CURRENT_MAP: RwLock<Option<Map>> = RwLock::new(None);
+    pub static ref CONFIG_SCREEN_PATH: Arc<RwLock<Option<PathBuf>>> = Arc::new(RwLock::new(None));
+    pub static ref ENIGO_SETTINGS: Arc<RwLock<Option<EnigoSettings>>> = Arc::new(RwLock::new(None));
+    pub static ref SETTINGS: Arc<RwLock<Option<Settings>>> = Arc::new(RwLock::new(None));
+    pub static ref GENERAL_CONFIG: Arc<RwLock<Option<GeneralConfig>>> = Arc::new(RwLock::new(None));
+    pub static ref HOTKEYS: Arc<RwLock<Option<Hotkeys>>> = Arc::new(RwLock::new(None));
+    pub static ref MAP_CONFIG: Arc<RwLock<Option<MapConfig>>> = Arc::new(RwLock::new(None));
+    pub static ref CURRENT_MAP: Arc<RwLock<Option<Map>>> = Arc::new(RwLock::new(None));
     pub static ref DEBUG: AtomicBool = AtomicBool::new(false);
 }

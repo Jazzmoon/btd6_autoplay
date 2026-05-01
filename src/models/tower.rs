@@ -49,14 +49,8 @@ impl Tower {
     }
 
     pub fn place(&self) -> Result<(), String> {
-        println!("Placing tower {} at coords ({}, {}) with hotkey {:?}", self.name, self.coords.x, self.coords.y, self.hotkey);
         let _ = interaction::press_key(self.hotkey.clone(), None);
-        println!("Pressed hotkey {:?} for tower {}", self.hotkey, self.name);
-
         let _ = interaction::click(self.coords.clone(), Some(100));
-        println!("Clicked at coords ({}, {}) to place tower {}", self.coords.x, self.coords.y, self.name);
-
-
         match self.deselect() {
             Ok(_) => Ok(()),
             Err(e) => Err(e.to_string()),
@@ -123,9 +117,8 @@ impl Tower {
             }
         }
 
-        self.upgrade_path = upgrade_path.try_into().unwrap();
         match self.deselect() {
-            Ok(_) => Ok(self.upgrade_path),
+            Ok(_) => Ok(upgrade_path.try_into().unwrap()),
             Err(e) => Err(e.to_string()),
         }
     }

@@ -14,15 +14,15 @@ pub struct Place {
 
 impl ActionTrait for Place {
     fn run(&self) -> Result<(), Box<dyn StdError>> {
-        let mut current_map_write_lock = CURRENT_MAP.write().unwrap();
-        let current_map = current_map_write_lock.as_mut().unwrap();
+        {
+            let current_map_read_lock = CURRENT_MAP.read().unwrap();
+            let current_map = current_map_read_lock.as_ref().unwrap();
 
-        // Check that there is no tower with that name already in the map
-        if current_map.towers.contains_key(self.tower_name.as_str()) {
-            return Err(format!("Tower with name {} already exists", self.tower_name).into());
+            // Check that there is no tower with that name already in the map
+            if current_map.towers.contains_key(self.tower_name.as_str()) {
+                return Err(format!("Tower with name {} already exists", self.tower_name).into());
+            }
         }
-
-        println!("Placing tower {} at coords ({}, {}) with hotkey {:?}", self.tower_type_name, self.coords.x, self.coords.y, self.tower_hotkey);
 
         let tower = Tower::new(
             self.tower_name.clone(),
@@ -33,6 +33,8 @@ impl ActionTrait for Place {
 
         match tower.place() {
             Ok(_) => {
+                let mut current_map_write_lock = CURRENT_MAP.write().unwrap();
+                let current_map = current_map_write_lock.as_mut().unwrap();
                 current_map.towers.insert(self.tower_name.clone(), tower);
                 println!("Successfully placed tower {}", self.tower_name);
                 Ok(())
