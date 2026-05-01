@@ -50,7 +50,9 @@ pub fn press_key(key: Hotkey, delay: Option<u64>) -> InputResult<()> {
     let converted: Vec<Key> = key.into();
 
     if converted.len() == 1 {
-        let res = enigo.key(converted[0], Click);
+        let res = enigo.key(converted[0], Press);
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        let _ = enigo.key(converted[0], Release);
         let _ = res;
         return Ok(());
     } else {
@@ -60,7 +62,9 @@ pub fn press_key(key: Hotkey, delay: Option<u64>) -> InputResult<()> {
         }
 
         // Click the last key
-        let _ = enigo.key(converted[converted.len() - 1], Click);
+        let _ = enigo.key(converted[converted.len() - 1], Press);
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        let _ = enigo.key(converted[converted.len() - 1], Release);
 
         // Release all but the last key
         for k in converted[..converted.len() - 1].iter() {
