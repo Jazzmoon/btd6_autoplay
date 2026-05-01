@@ -1,9 +1,5 @@
 use std::{
-    collections::HashMap,
-    path::PathBuf,
-    sync::atomic::Ordering,
-    thread::sleep,
-    time::Duration
+    collections::HashMap, path::PathBuf, sync::atomic::Ordering, thread::sleep, time::Duration,
 };
 
 use clap::Parser;
@@ -14,16 +10,23 @@ use rusty_tesseract::{image_to_string, Args as RTArgs};
 use xcap::Window;
 
 use btd6_autoplay::{
-    models::{action_parser, map::{OnWinAction, RoundCounterMode}},
+    models::{
+        action_parser,
+        map::{OnWinAction, RoundCounterMode},
+    },
     utils::{
-        global::{CONFIG_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, HOTKEYS, MAP_CONFIG},
+        global::{
+            CONFIG_SCREEN_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, HOTKEYS, MAP_CONFIG, GENERAL_CONFIG,
+        },
         interaction,
         location_finder::location_finder,
         parsing::{
-            load_hotkeys, load_map, load_map_config, load_settings, map_config_name_to_map_name,
+            load_hotkeys, load_map, load_map_config, load_settings, map_config_name_to_map_name, load_general_config,
         },
-        screenshot::{capture_area, capture_screenshot, convert_to_rusty_image, ImageProcessingType},
-    }
+        screenshot::{
+            capture_area, capture_screenshot, convert_to_rusty_image, ImageProcessingType,
+        },
+    },
 };
 
 #[derive(Parser, Debug)]
@@ -99,11 +102,13 @@ fn main() {
         DEBUG.store(true, Ordering::SeqCst);
     }
 
+    let _ = load_general_config();
+
     {
         let mut enigo_settings_write_lock = ENIGO_SETTINGS.write().unwrap();
         *enigo_settings_write_lock = Some(EnigoSettings {
             linux_delay: 10,
-            mac_delay: 10,
+            // mac_delay: 10,
             ..Default::default()
         });
     }
@@ -117,19 +122,50 @@ fn main() {
 
     let mut bloons_td6_window: Option<Window> = None;
     let mut seen_windows: Vec<String> = Vec::new();
-    for window in Window::all().unwrap() {
-        let app_name = window.app_name().to_lowercase();
-        let title = window.title().to_lowercase();
-        seen_windows.push(format!("app_name='{}', title='{}'", app_name, title));
-
-        if app_name.contains("bloons") || app_name.contains("bloonstd6") || title.contains("bloons") || title.contains("bloonstd6") {
-            bloons_td6_window = Some(window.clone());
-            let fragile_window = Fragile::new(window);
-            let mut current_window_write_lock = CURRENT_WINDOW.write().unwrap();
-            *current_window_write_lock = Some(fragile_window);
-            break;
+    {
+        let search_terms = {
+            let general_config_read_lock = GENERAL_CONFIG.read().unwrap();
+            general_config_read_lock
+                .as_ref()
+                .unwrap()
+                .window_title_search_terms
+                .clone()
+        };
+        for window in Window::all().unwrap() {
+            match window.app_name() {
+                Ok(ref name) => {
+                    // If the lowercase name contains any of GENERAL_CONFIG.window_title_search_terms, then we have found the window!
+                    if search_terms.iter().any(|term| name.to_lowercase().contains(term)) {
+                        bloons_td6_window = Some(window.clone());
+                        let fragile_window = Fragile::new(window);
+                        let mut current_window_write_lock = CURRENT_WINDOW.write().unwrap();
+                        *current_window_write_lock = Some(fragile_window);
+                        break;
+                    } else {
+                        seen_windows.push(name.to_string());
+                    }
+                }
+                Err(_) => {
+                    // If we can't get the app name, we can still get the window title, which might be helpful for debugging
+                    match window.title() {
+                        Ok(title) => {
+                            if search_terms.iter().any(|term| title.to_lowercase().contains(term)) {
+                                bloons_td6_window = Some(window.clone());
+                                let fragile_window = Fragile::new(window);
+                                let mut current_window_write_lock = CURRENT_WINDOW.write().unwrap();
+                                *current_window_write_lock = Some(fragile_window);
+                                break;
+                            } else {
+                                seen_windows.push(title.to_string());
+                            }
+                        },
+                        Err(_) => seen_windows.push("Unknown Window".to_string()),
+                    }
+                },
+            }
         }
     }
+
 
     if bloons_td6_window.is_none() {
         // If we didn't find an obvious match, print what we saw to help debugging.
@@ -139,17 +175,20 @@ fn main() {
         panic!("The BloonsTD6 window was not found. Common causes on Linux: running under Wayland (screenshots may not be supported), or the process/window name is different when using Proton/Wine/Steam. Try running your game in an X11 session (or under XWayland) and ensure the window is focused. For a quick workaround you can edit the source to match the actual app name/title shown in the debug output.");
     }
     let window = bloons_td6_window.as_ref().unwrap();
-    if window.is_minimized() {
+    if window.is_minimized().unwrap_or(false) {
         panic!("The BloonsTD6.exe window is minimized. Please open the game and try again.");
     }
 
     let (window_x, window_y, window_width, window_height) =
-        (window.x(), window.y(), window.width(), window.height());
+        (window.x().expect("Game window must exist to continue"), window.y().expect("Game window must exist to continue"), window.width().expect("Game window must exist to continue"), window.height().expect("Game window must exist to continue"));
 
-    println!("Detected window geometry: x={}, y={}, width={}, height={}", window_x, window_y, window_width, window_height);
+    println!(
+        "Detected window geometry: x={}, y={}, width={}, height={}",
+        window_x, window_y, window_width, window_height
+    );
 
     {
-        let mut config_path_write_lock = CONFIG_PATH.write().unwrap();
+        let mut config_path_write_lock = CONFIG_SCREEN_PATH.write().unwrap();
         *config_path_write_lock = Some(
             PathBuf::from("./config/").join(format!("{}x{}", window_width, window_height).as_str()),
         );
@@ -177,7 +216,7 @@ fn main() {
     // Load the maps directory into a hashmap
     let maps_path: PathBuf;
     {
-        let config_path_read_lock = CONFIG_PATH.read().unwrap();
+        let config_path_read_lock = CONFIG_SCREEN_PATH.read().unwrap();
         maps_path = config_path_read_lock.as_ref().unwrap().join("maps");
     }
     let maps: HashMap<String, String> = maps_path
@@ -315,7 +354,10 @@ fn main() {
     if args.debug {
         // Print the tessdata_dir and btd6_tessdata_path
         println!("tessdata_dir: {}", tessdata_dir.to_string_lossy());
-        println!("btd6_tessdata_path: {}", btd6_tessdata_path.to_string_lossy());
+        println!(
+            "btd6_tessdata_path: {}",
+            btd6_tessdata_path.to_string_lossy()
+        );
     }
     let lang = if btd6_tessdata_path.exists() {
         std::env::set_var("TESSDATA_PREFIX", &tessdata_dir);
@@ -389,7 +431,11 @@ fn main() {
             processing_actions,
             Some(threshold_value),
             Some(0.5),
-            if args.debug { Some("round_counter".to_string()) } else { None },
+            if args.debug {
+                Some("round_counter".to_string())
+            } else {
+                None
+            },
         );
 
         if args.debug {
@@ -421,7 +467,11 @@ fn main() {
                         ImageProcessingType::None,
                         None,
                         None,
-                        if args.debug { Some("victory_banner".to_string()) } else { None },
+                        if args.debug {
+                            Some("victory_banner".to_string())
+                        } else {
+                            None
+                        },
                     ),
                     capture_area(
                         screenshot.clone(),
@@ -429,7 +479,11 @@ fn main() {
                         processing_actions,
                         Some(200),
                         Some(0.9),
-                        if args.debug { Some("defeat_banner".to_string()) } else { None },
+                        if args.debug {
+                            Some("defeat_banner".to_string())
+                        } else {
+                            None
+                        },
                     ),
                 );
 
@@ -490,7 +544,11 @@ fn main() {
 
                 let on_win_action = {
                     let current_map_read_lock = CURRENT_MAP.read().unwrap();
-                    current_map_read_lock.as_ref().unwrap().on_win_action.clone()
+                    current_map_read_lock
+                        .as_ref()
+                        .unwrap()
+                        .on_win_action
+                        .clone()
                 };
 
                 match on_win_action {
@@ -501,7 +559,10 @@ fn main() {
                         empty_round_counter_count = 0;
                     }
                     OnWinAction::EndGame => {
-                        println!("EndGame action - exiting after {} win(s) and {} loss(es).", game_wins, game_losses);
+                        println!(
+                            "EndGame action - exiting after {} win(s) and {} loss(es).",
+                            game_wins, game_losses
+                        );
                         return;
                     }
                     OnWinAction::Continue => {
@@ -570,21 +631,24 @@ fn main() {
                     .get(&current_round)
                     .cloned()
                     .unwrap_or_default();
-                (current_map.restart_on_round, current_map.on_win_action.clone(), actions)
+                (
+                    current_map.restart_on_round,
+                    current_map.on_win_action.clone(),
+                    actions,
+                )
             };
 
             for action_str in &round_actions {
+                println!("Executing action: {}", action_str);
                 match action_parser::parse_action(action_str) {
-                    Ok(action) => {
-                        match action.run() {
-                            Ok(_) => {
-                                println!("Successfully ran action: {:?}", action_str);
-                            }
-                            Err(e) => {
-                                println!("Failed to run action: {:?}", e);
-                            }
+                    Ok(action) => match action.run() {
+                        Ok(_) => {
+                            println!("Successfully ran action: {:?}", action_str);
                         }
-                    }
+                        Err(e) => {
+                            println!("Failed to run action: {:?}", e);
+                        }
+                    },
                     Err(e) => {
                         println!("Action Parser failed to parse an action: {:?}", e);
                     }
@@ -595,7 +659,10 @@ fn main() {
             // (all towers have been placed; let the configured action decide what happens next)
             if let Some(target_round) = restart_on_round {
                 if current_round == target_round {
-                    println!("Reached restart_on_round ({}), triggering restart.", target_round);
+                    println!(
+                        "Reached restart_on_round ({}), triggering restart.",
+                        target_round
+                    );
                     match on_win_action {
                         OnWinAction::Restart => {
                             game_wins += 1;
@@ -604,7 +671,10 @@ fn main() {
                             empty_round_counter_count = 0;
                         }
                         OnWinAction::EndGame => {
-                            println!("EndGame action - exiting after {} win(s) and {} loss(es).", game_wins, game_losses);
+                            println!(
+                                "EndGame action - exiting after {} win(s) and {} loss(es).",
+                                game_wins, game_losses
+                            );
                             return;
                         }
                         OnWinAction::Continue => {

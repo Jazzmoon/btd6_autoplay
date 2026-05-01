@@ -9,9 +9,8 @@ use super::global::ENIGO_SETTINGS;
 use crate::models::{coords::Coords, hotkeys::Hotkey};
 
 pub fn move_cursor(coords: Coords, delay: Option<u64>) -> InputResult<()> {
-    if delay.is_some() {
-        std::thread::sleep(std::time::Duration::from_millis(delay.unwrap()));
-    }
+    std::thread::sleep(std::time::Duration::from_millis(delay.unwrap_or(100)));
+
     // Move cursor to coords
     let enigo_settings_read_lock = ENIGO_SETTINGS.read().unwrap();
     let enigo_settings = enigo_settings_read_lock.as_ref().unwrap();
@@ -24,9 +23,7 @@ pub fn move_cursor(coords: Coords, delay: Option<u64>) -> InputResult<()> {
 }
 
 pub fn click(coords: Coords, delay: Option<u64>) -> InputResult<()> {
-    if delay.is_some() {
-        std::thread::sleep(std::time::Duration::from_millis(delay.unwrap()));
-    }
+    std::thread::sleep(std::time::Duration::from_millis(delay.unwrap_or(100)));
     // Click at coords
     let enigo_settings_read_lock = ENIGO_SETTINGS.read().unwrap();
     let enigo_settings = enigo_settings_read_lock.as_ref().unwrap();
@@ -41,9 +38,8 @@ pub fn click(coords: Coords, delay: Option<u64>) -> InputResult<()> {
 }
 
 pub fn press_key(key: Hotkey, delay: Option<u64>) -> InputResult<()> {
-    if delay.is_some() {
-        std::thread::sleep(std::time::Duration::from_millis(delay.unwrap()));
-    }
+    std::thread::sleep(std::time::Duration::from_millis(delay.unwrap_or(100)));
+
     // Press key
     let enigo_settings_read_lock = ENIGO_SETTINGS.read().unwrap();
     let enigo_settings = enigo_settings_read_lock.as_ref().unwrap();
