@@ -18,22 +18,18 @@ bitflags! {
     }
 }
 
-pub fn capture_screenshot() -> DynamicImage {
+pub fn capture_screenshot(debug: bool) -> DynamicImage {
     let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
     let current_window = current_window_read_lock.as_ref().unwrap().get();
-    let monitor = current_window.current_monitor();
-    match monitor.capture_image() {
-        Ok(screenshot) => {
-            let monitor_img = DynamicImage::ImageRgba8(screenshot);
-            let window_img = imageops::crop_imm(
-                &monitor_img,
-                current_window.x().try_into().unwrap(),
-                current_window.y().try_into().unwrap(),
-                current_window.width(),
-                current_window.height(),
-            );
-
-            DynamicImage::ImageRgba8(window_img.to_image())
+    match current_window.capture_image() {
+        Ok(window_img) => {
+            let dyn_image = DynamicImage::ImageRgba8(window_img);
+            if debug {
+                println!("Window position: ({}, {})", current_window.x(), current_window.y());
+                println!("Window size: {}x{}", current_window.width(), current_window.height());
+                let _ = dyn_image.save("debug/bloons_window_capture.png");
+            }
+            dyn_image
         }
         Err(err) => {
             panic!("Screenshot failed to capture properly: {:?}", err);
@@ -47,6 +43,7 @@ pub fn capture_area(
     image_processing: ImageProcessingType,
     grayscale_threshold: Option<i32>,
     contrast_value: Option<f32>,
+    debug_image_name: Option<String>,
 ) -> DynamicImage {
     let cropped_img = imageops::crop_imm(
         &screenshot,
@@ -117,11 +114,18 @@ pub fn capture_area(
         dyn_image = DynamicImage::ImageRgba8(image_buffer);
     };
 
+    if let Some(name) = debug_image_name {
+        let _ = dyn_image.save(format!("debug/post_processing_{name}.png"));
+    }
+
     return dyn_image;
 }
 
 pub fn convert_to_rusty_image(img: DynamicImage) -> Image {
-    Image::from_dynamic_image(&img).unwrap()
+    match Image::from_dynamic_image(&img) {
+        Ok(image) => image,
+        Err(err) => panic!("Failed to convert image: {}", err),
+    }
 }
 
 pub fn skew_vertical(image: &RgbaImage, angle_degrees: f32) -> RgbaImage {

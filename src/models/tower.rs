@@ -7,14 +7,6 @@ use crate::utils::{
 use enigo::InputResult;
 use serde::{Deserialize, Serialize};
 
-fn capitalize_first_letter(s: &str) -> String {
-    let mut c = s.chars();
-    match c.next() {
-        None => String::new(),
-        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Tower {
     pub name: String,
@@ -57,8 +49,8 @@ impl Tower {
     }
 
     pub fn place(&self) -> Result<(), String> {
-        interaction::press_key(self.hotkey.clone(), None);
-        interaction::click(self.coords.clone(), None);
+        let _ = interaction::press_key(self.hotkey.clone(), None);
+        let _ = interaction::click(self.coords.clone(), None);
         match self.deselect() {
             Ok(_) => Ok(()),
             Err(e) => Err(e.to_string()),
@@ -108,19 +100,19 @@ impl Tower {
 
             if diff[0] > 0 {
                 for _ in 0..diff[0] {
-                    interaction::press_key(hotkeys.upgrade_top_path.clone(), None);
+                    let _ = interaction::press_key(hotkeys.upgrade_top_path.clone(), None);
                 }
             }
 
             if diff[1] > 0 {
                 for _ in 0..diff[1] {
-                    interaction::press_key(hotkeys.upgrade_middle_path.clone(), None);
+                    let _ = interaction::press_key(hotkeys.upgrade_middle_path.clone(), None);
                 }
             }
 
             if diff[2] > 0 {
                 for _ in 0..diff[2] {
-                    interaction::press_key(hotkeys.upgrade_bottom_path.clone(), None);
+                    let _ = interaction::press_key(hotkeys.upgrade_bottom_path.clone(), None);
                 }
             }
         }
@@ -139,6 +131,7 @@ impl Tower {
         }
         let hotkeys_read_lock = HOTKEYS.read().unwrap();
         let hotkeys = hotkeys_read_lock.as_ref().unwrap();
-        interaction::press_key(hotkeys.sell.clone(), None)
+        let _ = interaction::press_key(hotkeys.sell.clone(), None);
+        Ok(())
     }
 }

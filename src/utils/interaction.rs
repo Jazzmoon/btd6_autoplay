@@ -18,7 +18,9 @@ pub fn move_cursor(coords: Coords, delay: Option<u64>) -> InputResult<()> {
 
     let mut enigo = Enigo::new(enigo_settings).unwrap();
 
-    return enigo.move_mouse(coords.x, coords.y, Abs);
+    let res = enigo.move_mouse(coords.x, coords.y, Abs);
+    let _ = res;
+    Ok(())
 }
 
 pub fn click(coords: Coords, delay: Option<u64>) -> InputResult<()> {
@@ -31,9 +33,11 @@ pub fn click(coords: Coords, delay: Option<u64>) -> InputResult<()> {
 
     let mut enigo = Enigo::new(enigo_settings).unwrap();
 
-    move_cursor(coords, None);
+    let _ = move_cursor(coords, None);
 
-    return enigo.button(Left, Click);
+    let res = enigo.button(Left, Click);
+    let _ = res;
+    Ok(())
 }
 
 pub fn press_key(key: Hotkey, delay: Option<u64>) -> InputResult<()> {
@@ -50,20 +54,21 @@ pub fn press_key(key: Hotkey, delay: Option<u64>) -> InputResult<()> {
     let converted: Vec<Key> = key.into();
 
     if converted.len() == 1 {
-        enigo.key(converted[0], Click);
+        let res = enigo.key(converted[0], Click);
+        let _ = res;
         return Ok(());
     } else {
         // Press and hold all but the last key
         for k in converted[..converted.len() - 1].iter() {
-            enigo.key(k.clone(), Press);
+            let _ = enigo.key(k.clone(), Press);
         }
 
         // Click the last key
-        enigo.key(converted[converted.len() - 1], Click);
+        let _ = enigo.key(converted[converted.len() - 1], Click);
 
         // Release all but the last key
         for k in converted[..converted.len() - 1].iter() {
-            enigo.key(k.clone(), Release);
+            let _ = enigo.key(k.clone(), Release);
         }
 
         return Ok(());

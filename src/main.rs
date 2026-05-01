@@ -14,9 +14,10 @@ use rusty_tesseract::{image_to_string, Args as RTArgs};
 use xcap::Window;
 
 use btd6_autoplay::{
-    models::{action_parser, map::RoundCounterMode},
+    models::{action_parser, map::{OnWinAction, RoundCounterMode}},
     utils::{
-        global::{CONFIG_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, MAP_CONFIG},
+        global::{CONFIG_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, HOTKEYS, MAP_CONFIG},
+        interaction,
         location_finder::location_finder,
         parsing::{
             load_hotkeys, load_map, load_map_config, load_settings, map_config_name_to_map_name,
@@ -58,6 +59,39 @@ struct Args {
     debug: bool,
 }
 
+/// Navigate the post-game UI and restart the current map from round 1.
+///
+/// Flow (mirrors the Python `Game.restart_game`):
+///   next → decline freeplay → Escape × 2 → restart → confirm
+///
+/// Also clears all placed tower state from `CURRENT_MAP` so the next
+/// game starts with a clean slate.
+fn restart_game(settings: &btd6_autoplay::models::settings::Settings) {
+    let menu_hotkey = {
+        let hotkeys_read_lock = HOTKEYS.read().unwrap();
+        hotkeys_read_lock.as_ref().unwrap().menu.clone()
+    };
+
+    // Click the "Next" button on the victory/defeat screen
+    let _ = interaction::click(settings.game.next_button.clone(), Some(2000));
+    // Decline the freeplay offer
+    let _ = interaction::click(settings.game.freeplay_button.clone(), Some(2000));
+    // Open the in-game menu (press Escape twice to get to the restart option)
+    let _ = interaction::press_key(menu_hotkey.clone(), Some(1000));
+    let _ = interaction::press_key(menu_hotkey, Some(1000));
+    // Click "Restart" and then confirm
+    let _ = interaction::click(settings.game.restart_game_button.clone(), Some(1000));
+    let _ = interaction::click(settings.game.confirm_button.clone(), Some(1000));
+
+    // Clear placed towers so the next game starts fresh
+    {
+        let mut current_map_write_lock = CURRENT_MAP.write().unwrap();
+        if let Some(current_map) = current_map_write_lock.as_mut() {
+            current_map.towers.clear();
+        }
+    }
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -81,10 +115,14 @@ fn main() {
     );
     sleep(Duration::from_secs(args.sleep));
 
-    // Load all Windows and locate the BloonsTD6.exe executable
     let mut bloons_td6_window: Option<Window> = None;
+    let mut seen_windows: Vec<String> = Vec::new();
     for window in Window::all().unwrap() {
-        if window.app_name().eq("BloonsTD6.exe") {
+        let app_name = window.app_name().to_lowercase();
+        let title = window.title().to_lowercase();
+        seen_windows.push(format!("app_name='{}', title='{}'", app_name, title));
+
+        if app_name.contains("bloons") || app_name.contains("bloonstd6") || title.contains("bloons") || title.contains("bloonstd6") {
             bloons_td6_window = Some(window.clone());
             let fragile_window = Fragile::new(window);
             let mut current_window_write_lock = CURRENT_WINDOW.write().unwrap();
@@ -94,7 +132,11 @@ fn main() {
     }
 
     if bloons_td6_window.is_none() {
-        panic!("The BloonsTD6.exe window was not found. Please open the game and try again.");
+        // If we didn't find an obvious match, print what we saw to help debugging.
+        if DEBUG.load(std::sync::atomic::Ordering::SeqCst) {
+            println!("Available windows:\n{}", seen_windows.join("\n"));
+        }
+        panic!("The BloonsTD6 window was not found. Common causes on Linux: running under Wayland (screenshots may not be supported), or the process/window name is different when using Proton/Wine/Steam. Try running your game in an X11 session (or under XWayland) and ensure the window is focused. For a quick workaround you can edit the source to match the actual app name/title shown in the debug output.");
     }
     let window = bloons_td6_window.as_ref().unwrap();
     if window.is_minimized() {
@@ -103,6 +145,8 @@ fn main() {
 
     let (window_x, window_y, window_width, window_height) =
         (window.x(), window.y(), window.width(), window.height());
+
+    println!("Detected window geometry: x={}, y={}, width={}, height={}", window_x, window_y, window_width, window_height);
 
     {
         let mut config_path_write_lock = CONFIG_PATH.write().unwrap();
@@ -152,10 +196,19 @@ fn main() {
     let mut map_file_name = args.map.clone();
     match map_file_name {
         Some(ref map_name) => {
-            let values = maps.values().collect::<Vec<&String>>();
-            if !values.contains(&&map_name) {
+            if args.debug {
+                // List arg and all legal map name options
+                let items = maps.iter().collect::<Vec<(&String, &String)>>();
+                println!("Map name: {}", map_name);
+                println!("Legal map name options:");
+                for (key, value) in &items {
+                    println!("- Key: {} | Value: {}", key, value);
+                }
+            }
+            if !maps.contains_key(map_name) {
                 panic!("The map provided is not a legal map within the maps directory.");
             }
+            map_file_name = Some(maps.get(map_name).unwrap().clone());
         }
         None => {
             let mut options = maps.keys().collect::<Vec<&String>>();
@@ -257,9 +310,32 @@ fn main() {
     // let current_map = current_map_read_lock.as_ref().unwrap();
 
     // Load tesseract
+    let tessdata_dir = std::env::current_dir().unwrap().join("tessdata");
+    let btd6_tessdata_path = tessdata_dir.join("btd6.traineddata");
+    if args.debug {
+        // Print the tessdata_dir and btd6_tessdata_path
+        println!("tessdata_dir: {}", tessdata_dir.to_string_lossy());
+        println!("btd6_tessdata_path: {}", btd6_tessdata_path.to_string_lossy());
+    }
+    let lang = if btd6_tessdata_path.exists() {
+        std::env::set_var("TESSDATA_PREFIX", &tessdata_dir);
+        if args.debug {
+            println!("TESSDATA_PREFIX set to: {}", tessdata_dir.to_string_lossy());
+            println!("Using tesseract data language: btd6+eng");
+        }
+        "btd6+eng"
+    } else {
+        std::env::remove_var("TESSDATA_PREFIX");
+        if args.debug {
+            println!("TESSDATA_PREFIX removed");
+            println!("Using tesseract data language: eng");
+        }
+        "eng"
+    };
+
     let (rt_round_args, rt_victory_args, rt_defeat_args) = (
         RTArgs {
-            lang: "eng".into(),
+            lang: lang.into(),
             config_variables: HashMap::from([(
                 "tessedit_char_whitelist".into(),
                 "0123456789/".into(),
@@ -269,14 +345,14 @@ fn main() {
             oem: Some(3),
         },
         RTArgs {
-            lang: "eng".into(),
+            lang: lang.into(),
             config_variables: HashMap::from([("tessedit_char_whitelist".into(), "VICTORY".into())]),
             dpi: Some(150),
             psm: Some(6),
             oem: Some(3),
         },
         RTArgs {
-            lang: "eng".into(),
+            lang: lang.into(),
             config_variables: HashMap::from([("tessedit_char_whitelist".into(), "DeFeAT".into())]),
             dpi: Some(300),
             psm: Some(6),
@@ -299,7 +375,7 @@ fn main() {
 
     while args.number == -1 || game_wins + game_losses < args.number {
         // Get screenshot of the game window
-        let screenshot = capture_screenshot();
+        let screenshot = capture_screenshot(args.debug);
 
         // Do round counter processing
         let processing_actions = ImageProcessingType::Resize
@@ -313,6 +389,7 @@ fn main() {
             processing_actions,
             Some(threshold_value),
             Some(0.5),
+            if args.debug { Some("round_counter".to_string()) } else { None },
         );
 
         if args.debug {
@@ -329,7 +406,7 @@ fn main() {
         if output.is_empty() {
             empty_round_counter_count += 1;
 
-            if empty_round_counter_count >= 2 {
+            if empty_round_counter_count >= 3 {
                 empty_round_counter_count = 0;
 
                 let processing_actions = ImageProcessingType::Resize
@@ -344,6 +421,7 @@ fn main() {
                         ImageProcessingType::None,
                         None,
                         None,
+                        if args.debug { Some("victory_banner".to_string()) } else { None },
                     ),
                     capture_area(
                         screenshot.clone(),
@@ -351,13 +429,9 @@ fn main() {
                         processing_actions,
                         Some(200),
                         Some(0.9),
+                        if args.debug { Some("defeat_banner".to_string()) } else { None },
                     ),
                 );
-
-                if args.debug {
-                    let _ = victory_image.save("debug/victory_banner.png");
-                    let _ = defeat_image.save("debug/defeat_banner.png");
-                }
 
                 let (victory_banner, defeat_banner) = (
                     image_to_string(&convert_to_rusty_image(victory_image), &rt_victory_args),
@@ -413,11 +487,35 @@ fn main() {
                     println!("The game has ended. The player has lost.");
                     game_losses += 1;
                 }
+
+                let on_win_action = {
+                    let current_map_read_lock = CURRENT_MAP.read().unwrap();
+                    current_map_read_lock.as_ref().unwrap().on_win_action.clone()
+                };
+
+                match on_win_action {
+                    OnWinAction::Restart => {
+                        println!("Restarting game...");
+                        restart_game(&settings);
+                        last_seen_round = 0;
+                        empty_round_counter_count = 0;
+                    }
+                    OnWinAction::EndGame => {
+                        println!("EndGame action - exiting after {} win(s) and {} loss(es).", game_wins, game_losses);
+                        return;
+                    }
+                    OnWinAction::Continue => {
+                        // Stay in freeplay / do nothing – the outer loop will keep running
+                        println!("Continuing in freeplay...");
+                    }
+                }
                 continue;
             }
         }
 
-        println!("Output: '{}'", output);
+        if args.debug {
+            println!("Output: '{}'", output);
+        }
 
         let current_round: i32;
         let total_rounds: i32;
@@ -462,37 +560,59 @@ fn main() {
                 println!("The current round is: {}/{}", current_round, total_rounds);
             }
 
-            // Save screenshot of the whole game window to the "screenshots" directory with the round number as the filename
-            if args.debug {
-                let screenshot_path =
-                    PathBuf::from("debug/screenshots").join(format!("{}.png", current_round));
-                let _ = screenshot.save(screenshot_path);
-            }
+            // Extract everything we need from CURRENT_MAP in a single read-lock scope,
+            // before executing actions (which may themselves acquire a write lock).
+            let (restart_on_round, on_win_action, round_actions) = {
+                let current_map_read_lock = CURRENT_MAP.read().unwrap();
+                let current_map = current_map_read_lock.as_ref().unwrap();
+                let actions = current_map
+                    .instructions
+                    .get(&current_round)
+                    .cloned()
+                    .unwrap_or_default();
+                (current_map.restart_on_round, current_map.on_win_action.clone(), actions)
+            };
 
-            // Check if there are any actions to take for the current round
-            let current_map_read_lock = CURRENT_MAP.read().unwrap();
-            let current_map = current_map_read_lock.as_ref().unwrap();
-            match current_map.instructions.get(&current_round) {
-                Some(actions) => {
-                    for action_str in actions {
-                        match action_parser::parse_action(action_str) {
-                            Ok(action) => {
-                                match action.run() {
-                                    Ok(_) => {
-                                        println!("Successfully ran action: {:?}", action_str);
-                                    }
-                                    Err(e) => {
-                                        println!("Failed to run action: {:?}", e);
-                                    }
-                                }
+            for action_str in &round_actions {
+                match action_parser::parse_action(action_str) {
+                    Ok(action) => {
+                        match action.run() {
+                            Ok(_) => {
+                                println!("Successfully ran action: {:?}", action_str);
                             }
                             Err(e) => {
-                                println!("Action Parser failed to parse an action: {:?}", e);
+                                println!("Failed to run action: {:?}", e);
                             }
                         }
                     }
+                    Err(e) => {
+                        println!("Action Parser failed to parse an action: {:?}", e);
+                    }
                 }
-                None => {}
+            }
+
+            // If this round matches restart_on_round, trigger the restart sequence now
+            // (all towers have been placed; let the configured action decide what happens next)
+            if let Some(target_round) = restart_on_round {
+                if current_round == target_round {
+                    println!("Reached restart_on_round ({}), triggering restart.", target_round);
+                    match on_win_action {
+                        OnWinAction::Restart => {
+                            game_wins += 1;
+                            restart_game(&settings);
+                            last_seen_round = 0;
+                            empty_round_counter_count = 0;
+                        }
+                        OnWinAction::EndGame => {
+                            println!("EndGame action - exiting after {} win(s) and {} loss(es).", game_wins, game_losses);
+                            return;
+                        }
+                        OnWinAction::Continue => {
+                            // Nothing to do – let the game run in freeplay
+                            println!("Continuing in freeplay after reaching restart_on_round.");
+                        }
+                    }
+                }
             }
         }
 
