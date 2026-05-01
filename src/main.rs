@@ -115,10 +115,14 @@ fn main() {
     );
     sleep(Duration::from_secs(args.sleep));
 
-    // Load all Windows and locate the BloonsTD6.exe executable
     let mut bloons_td6_window: Option<Window> = None;
+    let mut seen_windows: Vec<String> = Vec::new();
     for window in Window::all().unwrap() {
-        if window.app_name().eq("BloonsTD6.exe") {
+        let app_name = window.app_name().to_lowercase();
+        let title = window.title().to_lowercase();
+        seen_windows.push(format!("app_name='{}', title='{}'", app_name, title));
+
+        if app_name.contains("bloons") || app_name.contains("bloonstd6") || title.contains("bloons") || title.contains("bloonstd6") {
             bloons_td6_window = Some(window.clone());
             let fragile_window = Fragile::new(window);
             let mut current_window_write_lock = CURRENT_WINDOW.write().unwrap();
@@ -128,7 +132,11 @@ fn main() {
     }
 
     if bloons_td6_window.is_none() {
-        panic!("The BloonsTD6.exe window was not found. Please open the game and try again.");
+        // If we didn't find an obvious match, print what we saw to help debugging.
+        if DEBUG.load(std::sync::atomic::Ordering::SeqCst) {
+            println!("Available windows:\n{}", seen_windows.join("\n"));
+        }
+        panic!("The BloonsTD6 window was not found. Common causes on Linux: running under Wayland (screenshots may not be supported), or the process/window name is different when using Proton/Wine/Steam. Try running your game in an X11 session (or under XWayland) and ensure the window is focused. For a quick workaround you can edit the source to match the actual app name/title shown in the debug output.");
     }
     let window = bloons_td6_window.as_ref().unwrap();
     if window.is_minimized() {
@@ -137,6 +145,8 @@ fn main() {
 
     let (window_x, window_y, window_width, window_height) =
         (window.x(), window.y(), window.width(), window.height());
+
+    println!("Detected window geometry: x={}, y={}, width={}, height={}", window_x, window_y, window_width, window_height);
 
     {
         let mut config_path_write_lock = CONFIG_PATH.write().unwrap();
