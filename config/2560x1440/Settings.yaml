@@ -4,6 +4,11 @@ screen:
     w: 2560
     h: 1140
 game:
+    round_counter:
+        x: 1827
+        y: 46
+        w: 256
+        h: 50
     victory_banner:
         x: 782
         y: 107
@@ -32,8 +37,3 @@ game:
     home_button:
         x: 1128
         y: 1115
-    round_counter:
-        x: 1827
-        y: 46
-        w: 256
-        h: 50

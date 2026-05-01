@@ -7,8 +7,6 @@ use crate::utils::{
 use enigo::InputResult;
 use serde::{Deserialize, Serialize};
 
-
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Tower {
     pub name: String,

@@ -196,10 +196,19 @@ fn main() {
     let mut map_file_name = args.map.clone();
     match map_file_name {
         Some(ref map_name) => {
-            let values = maps.values().collect::<Vec<&String>>();
-            if !values.contains(&&map_name) {
+            if args.debug {
+                // List arg and all legal map name options
+                let items = maps.iter().collect::<Vec<(&String, &String)>>();
+                println!("Map name: {}", map_name);
+                println!("Legal map name options:");
+                for (key, value) in &items {
+                    println!("- Key: {} | Value: {}", key, value);
+                }
+            }
+            if !maps.contains_key(map_name) {
                 panic!("The map provided is not a legal map within the maps directory.");
             }
+            map_file_name = Some(maps.get(map_name).unwrap().clone());
         }
         None => {
             let mut options = maps.keys().collect::<Vec<&String>>();
@@ -301,9 +310,32 @@ fn main() {
     // let current_map = current_map_read_lock.as_ref().unwrap();
 
     // Load tesseract
+    let tessdata_dir = std::env::current_dir().unwrap().join("tessdata");
+    let btd6_tessdata_path = tessdata_dir.join("btd6.traineddata");
+    if args.debug {
+        // Print the tessdata_dir and btd6_tessdata_path
+        println!("tessdata_dir: {}", tessdata_dir.to_string_lossy());
+        println!("btd6_tessdata_path: {}", btd6_tessdata_path.to_string_lossy());
+    }
+    let lang = if btd6_tessdata_path.exists() {
+        std::env::set_var("TESSDATA_PREFIX", &tessdata_dir);
+        if args.debug {
+            println!("TESSDATA_PREFIX set to: {}", tessdata_dir.to_string_lossy());
+            println!("Using tesseract data language: btd6+eng");
+        }
+        "btd6+eng"
+    } else {
+        std::env::remove_var("TESSDATA_PREFIX");
+        if args.debug {
+            println!("TESSDATA_PREFIX removed");
+            println!("Using tesseract data language: eng");
+        }
+        "eng"
+    };
+
     let (rt_round_args, rt_victory_args, rt_defeat_args) = (
         RTArgs {
-            lang: "eng".into(),
+            lang: lang.into(),
             config_variables: HashMap::from([(
                 "tessedit_char_whitelist".into(),
                 "0123456789/".into(),
@@ -313,14 +345,14 @@ fn main() {
             oem: Some(3),
         },
         RTArgs {
-            lang: "eng".into(),
+            lang: lang.into(),
             config_variables: HashMap::from([("tessedit_char_whitelist".into(), "VICTORY".into())]),
             dpi: Some(150),
             psm: Some(6),
             oem: Some(3),
         },
         RTArgs {
-            lang: "eng".into(),
+            lang: lang.into(),
             config_variables: HashMap::from([("tessedit_char_whitelist".into(), "DeFeAT".into())]),
             dpi: Some(300),
             psm: Some(6),
@@ -343,7 +375,7 @@ fn main() {
 
     while args.number == -1 || game_wins + game_losses < args.number {
         // Get screenshot of the game window
-        let screenshot = capture_screenshot();
+        let screenshot = capture_screenshot(args.debug);
 
         // Do round counter processing
         let processing_actions = ImageProcessingType::Resize
@@ -357,6 +389,7 @@ fn main() {
             processing_actions,
             Some(threshold_value),
             Some(0.5),
+            if args.debug { Some("round_counter".to_string()) } else { None },
         );
 
         if args.debug {
@@ -373,7 +406,7 @@ fn main() {
         if output.is_empty() {
             empty_round_counter_count += 1;
 
-            if empty_round_counter_count >= 2 {
+            if empty_round_counter_count >= 3 {
                 empty_round_counter_count = 0;
 
                 let processing_actions = ImageProcessingType::Resize
@@ -388,6 +421,7 @@ fn main() {
                         ImageProcessingType::None,
                         None,
                         None,
+                        if args.debug { Some("victory_banner".to_string()) } else { None },
                     ),
                     capture_area(
                         screenshot.clone(),
@@ -395,13 +429,9 @@ fn main() {
                         processing_actions,
                         Some(200),
                         Some(0.9),
+                        if args.debug { Some("defeat_banner".to_string()) } else { None },
                     ),
                 );
-
-                if args.debug {
-                    let _ = victory_image.save("debug/victory_banner.png");
-                    let _ = defeat_image.save("debug/defeat_banner.png");
-                }
 
                 let (victory_banner, defeat_banner) = (
                     image_to_string(&convert_to_rusty_image(victory_image), &rt_victory_args),
@@ -483,7 +513,9 @@ fn main() {
             }
         }
 
-        println!("Output: '{}'", output);
+        if args.debug {
+            println!("Output: '{}'", output);
+        }
 
         let current_round: i32;
         let total_rounds: i32;
@@ -526,13 +558,6 @@ fn main() {
                 println!("The current round is: {}", current_round);
             } else {
                 println!("The current round is: {}/{}", current_round, total_rounds);
-            }
-
-            // Save screenshot of the whole game window to the "screenshots" directory with the round number as the filename
-            if args.debug {
-                let screenshot_path =
-                    PathBuf::from("debug/screenshots").join(format!("{}.png", current_round));
-                let _ = screenshot.save(screenshot_path);
             }
 
             // Extract everything we need from CURRENT_MAP in a single read-lock scope,

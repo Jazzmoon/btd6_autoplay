@@ -5,17 +5,17 @@ version = "3.0.0"
 edition = "2021"
 
 [dependencies]
-bitflags = "2.6.0"
-clap = { version = "4.5.21", features = ["derive"] }
+bitflags = "2.11.1"
+clap = { version = "4.6.1", features = ["derive"] }
 device_query = "2.1.0"
 enigo = "0.2.1"
-fragile = "2.0.0"
-image = "0.25.5"
+fragile = "2.1.0"
+image = "0.25.10"
 inquire = "0.7.5"
 lazy_static = "1.5.0"
-regex = "1.11.1"
+regex = "1.12.3"
 rusty-tesseract = "1.1.10"
-serde = { version = "1.0.215", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_yaml = "0.9.34"
 struct_iterable = "0.1.1"
 xcap = "0.0.14"
