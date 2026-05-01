@@ -25,8 +25,8 @@ pub fn capture_screenshot(debug: bool) -> DynamicImage {
         Ok(window_img) => {
             let dyn_image = DynamicImage::ImageRgba8(window_img);
             if debug {
-                println!("Window position: ({}, {})", current_window.x(), current_window.y());
-                println!("Window size: {}x{}", current_window.width(), current_window.height());
+                println!("Window position: ({}, {})", current_window.x().expect("Game window must exist to continue"), current_window.y().expect("Game window must exist to continue"));
+                println!("Window size: {}x{}", current_window.width().expect("Game window must exist to continue"), current_window.height().expect("Game window must exist to continue"));
                 let _ = dyn_image.save("debug/bloons_window_capture.png");
             }
             dyn_image

@@ -49,8 +49,17 @@ impl Tower {
     }
 
     pub fn place(&self) -> Result<(), String> {
+        println!("Placing tower {} at coords ({}, {}) with hotkey {:?}", self.name, self.coords.x, self.coords.y, self.hotkey);
         let _ = interaction::press_key(self.hotkey.clone(), None);
-        let _ = interaction::click(self.coords.clone(), None);
+        println!("Pressed hotkey {:?} for tower {}", self.hotkey, self.name);
+        
+        std::thread::sleep(std::time::Duration::from_secs(5));
+
+
+        let _ = interaction::click(self.coords.clone(), Some(100));
+        println!("Clicked at coords ({}, {}) to place tower {}", self.coords.x, self.coords.y, self.name);
+
+
         match self.deselect() {
             Ok(_) => Ok(()),
             Err(e) => Err(e.to_string()),

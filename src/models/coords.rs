@@ -10,8 +10,8 @@ pub struct Coords {
 impl Coords {
     pub fn relative_to_window(&self, window: &Window) -> Coords {
         Coords {
-            x: window.x() + self.x,
-            y: window.y() + self.y,
+            x: window.x().expect("Game window must exist in order to have its coordinates referenced") + self.x,
+            y: window.y().expect("Game window must exist in order to have its coordinates referenced") + self.y,
         }
     }
 
@@ -34,8 +34,8 @@ pub struct CoordsArea {
 impl CoordsArea {
     pub fn relative_to_window(&self, window: &Window) -> CoordsArea {
         CoordsArea {
-            x: window.x() + self.x,
-            y: window.y() + self.y,
+            x: window.x().expect("Game window must exist in order to have its coordinates referenced") + self.x,
+            y: window.y().expect("Game window must exist in order to have its coordinates referenced") + self.y,
             w: self.w,
             h: self.h,
         }

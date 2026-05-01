@@ -118,7 +118,7 @@ pub fn string_to_key(key: String) -> Key {
         "page_down" => Key::PageDown,
         "page_up" => Key::PageUp,
         "pause" => Key::Pause,
-        "print" => Key::Print,
+        "print" => Key::PrintScr,
         "r_control" => Key::RControl,
         "return" => Key::Return,
         "right_arrow" => Key::RightArrow,

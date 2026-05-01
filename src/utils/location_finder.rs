@@ -1,9 +1,10 @@
-use device_query::{DeviceEvents, DeviceState, Keycode};
+use device_query::{DeviceEvents, DeviceEventsHandler, Keycode};
 use enigo::{Enigo, Mouse, Settings as EnigoSettings};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc, Mutex,
 };
+use std::time::Duration;
 
 use crate::models::coords::CoordsArea;
 
@@ -30,11 +31,13 @@ pub fn location_finder(window_x: i32, window_y: i32) {
     let paused = Arc::new(AtomicBool::new(false));
     let mode = Arc::new(Mutex::new(LocationFinderMode::SinglePoint));
     let area_mode_first_coordinate: Arc<Mutex<Option<(i32, i32)>>> = Arc::new(Mutex::new(None));
-    let device_state = DeviceState::new();
+    let device_events = DeviceEventsHandler::new(Duration::from_millis(10)).unwrap();
 
     let paused_clone = Arc::clone(&paused);
     let mode_clone = Arc::clone(&mode);
-    let _guard = device_state.on_key_up(move |key| {
+
+
+    let _guard = device_events.on_key_up(move |key| {
         if key.eq(&Keycode::Q) {
             println!("Exiting program");
             std::process::exit(0);
@@ -62,7 +65,7 @@ pub fn location_finder(window_x: i32, window_y: i32) {
     let paused_clone = Arc::clone(&paused);
     let mode_clone = Arc::clone(&mode);
     let area_mode_first_coordinate_clone = Arc::clone(&area_mode_first_coordinate);
-    let _guard = device_state.on_mouse_up(move |button| {
+    let _guard = device_events.on_mouse_up(move |button| {
         if *button != 1 {
             return;
         }

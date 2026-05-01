@@ -22,6 +22,8 @@ impl ActionTrait for Place {
             return Err(format!("Tower with name {} already exists", self.tower_name).into());
         }
 
+        println!("Placing tower {} at coords ({}, {}) with hotkey {:?}", self.tower_type_name, self.coords.x, self.coords.y, self.tower_hotkey);
+
         let tower = Tower::new(
             self.tower_name.clone(),
             self.tower_hotkey.clone(),
@@ -32,9 +34,13 @@ impl ActionTrait for Place {
         match tower.place() {
             Ok(_) => {
                 current_map.towers.insert(self.tower_name.clone(), tower);
+                println!("Successfully placed tower {}", self.tower_name);
                 Ok(())
             }
-            Err(e) => Err(e.into()),
+            Err(e) => {
+                println!("Failed to place tower {}: {:?}", self.tower_name, e);
+                Err(e.into())
+            }
         }
     }
 }

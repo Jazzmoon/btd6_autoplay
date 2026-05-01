@@ -165,7 +165,15 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
             return Ok(Box::new(actions::sleep::Sleep { sleep_time }));
         }
         "start" => {
-            return Ok(Box::new(actions::start::Start {}));
+            if action_array.len() > 2 {
+                return Err("Start action can only take one optional argument: 'fast-forward'.".into());
+            }
+            if action_array.len() == 2 && action_array[1] != "fast-forward" {
+                return Err("Start action's only optional argument is 'fast-forward'.".into());
+            }
+            return Ok(Box::new(actions::start::Start {
+                fast_forward: Some(action_array.len() == 2 && action_array[1] == "fast-forward")
+            }));
         }
         "upgrade" => {
             let args = action_array[1..].to_vec();
