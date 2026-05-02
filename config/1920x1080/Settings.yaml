@@ -19,21 +19,3 @@ game:
         y: 584
         w: 730
         h: 115
-    next_button:
-        x: 965
-        y: 1464
-    freeplay_button:
-        x: 1220
-        y: 629
-    freeplay_ok_button:
-        x: 965
-        y: 1309
-    restart_game_button:
-        x: 1080
-        y: 1390
-    confirm_button:
-        x: 1135
-        y: 1948
-    home_button:
-        x: 845
-        y: 1404

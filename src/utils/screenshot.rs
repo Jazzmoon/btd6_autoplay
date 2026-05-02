@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use bitflags::bitflags;
 use image::{imageops, DynamicImage, GenericImage, Rgba, RgbaImage};
-use rusty_tesseract::Image;
+use rusty_tesseract::{image_to_data, Args as RTArgs, Image};
 
 use crate::models::coords::CoordsArea;
 
@@ -126,6 +128,87 @@ pub fn convert_to_rusty_image(img: DynamicImage) -> Image {
         Ok(image) => image,
         Err(err) => panic!("Failed to convert image: {}", err),
     }
+}
+
+/// Search a game-window screenshot for a word using Tesseract OCR and return
+/// the bounding box of the first match (coordinates relative to the game window).
+///
+/// The image passed in should be the raw (unscaled) screenshot from
+/// `capture_screenshot` so that the returned pixel coordinates map 1-to-1 with
+/// game-window pixels.
+pub fn find_text_on_screen(
+    screenshot: &DynamicImage,
+    target_text: &str,
+    lang: &str,
+    debug: bool,
+) -> Option<CoordsArea> {
+    let image = convert_to_rusty_image(screenshot.clone());
+    let args = RTArgs {
+        lang: lang.into(),
+        // PSM 11: sparse text – finds individual words anywhere in the image,
+        // which is ideal for hunting UI button labels in a complex scene.
+        psm: Some(11),
+        oem: Some(3),
+        dpi: Some(150),
+        config_variables: HashMap::new(),
+    };
+
+    let data = match image_to_data(&image, &args) {
+        Ok(d) => d,
+        Err(e) => {
+            if debug {
+                println!("find_text_on_screen: image_to_data error: {:?}", e);
+            }
+            return None;
+        }
+    };
+
+    if debug {
+        println!("find_text_on_screen ('{target_text}'): TSV output:\n{}", data.output);
+    }
+
+    let target_upper = target_text.to_uppercase();
+
+    // Tesseract TSV columns (0-indexed):
+    //   0:level  1:page_num  2:block_num  3:par_num  4:line_num  5:word_num
+    //   6:left   7:top       8:width      9:height   10:conf     11:text
+    for line in data.output.lines().skip(1) {
+        let cols: Vec<&str> = line.split('\t').collect();
+        if cols.len() < 12 {
+            continue;
+        }
+        // level 5 = individual word
+        if cols[0].trim() != "5" {
+            continue;
+        }
+        let text = cols[11].trim().to_uppercase();
+        if text != target_upper {
+            continue;
+        }
+        let left = cols[6].trim().parse::<i32>().unwrap_or(-1);
+        let top = cols[7].trim().parse::<i32>().unwrap_or(-1);
+        let width = cols[8].trim().parse::<i32>().unwrap_or(0);
+        let height = cols[9].trim().parse::<i32>().unwrap_or(0);
+        if left >= 0 && top >= 0 && width > 0 && height > 0 {
+            if debug {
+                println!(
+                    "find_text_on_screen: found '{}' at ({}, {}, {}x{})",
+                    target_text, left, top, width, height
+                );
+            }
+            return Some(CoordsArea {
+                x: left,
+                y: top,
+                w: width,
+                h: height,
+            });
+        }
+    }
+
+    if debug {
+        println!("find_text_on_screen: '{}' not found on screen", target_text);
+    }
+    None
 }
 
 pub fn skew_vertical(image: &RgbaImage, angle_degrees: f32) -> RgbaImage {

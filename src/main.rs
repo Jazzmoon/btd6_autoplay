@@ -19,7 +19,7 @@ use btd6_autoplay::{
             CONFIG_SCREEN_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, GENERAL_CONFIG,
             HOTKEYS, MAP_CONFIG,
         },
-        interaction,
+        interaction::{self, ClickTextMode},
         location_finder::location_finder,
         parsing::{
             load_general_config, load_hotkeys, load_map, load_map_config, load_settings,
@@ -66,27 +66,60 @@ struct Args {
 
 /// Navigate the post-game UI and restart the current map from round 1.
 ///
-/// Flow (mirrors the Python `Game.restart_game`):
-///   next → decline freeplay → Escape × 2 → restart → confirm
+/// Flow (mirrors the old hardcoded-coordinates approach):
+///   "NEXT" → "FREEPLAY" (enter freeplay) → Escape × 2 → "RESTART" → "OK"
+///
+/// All button positions are determined at runtime via OCR so no
+/// resolution-specific coordinates are needed.
 ///
 /// Also clears all placed tower state from `CURRENT_MAP` so the next
 /// game starts with a clean slate.
-fn restart_game(settings: &btd6_autoplay::models::settings::Settings) {
+fn restart_game(lang: &str, debug: bool) {
     let menu_hotkey = {
         let hotkeys_read_lock = HOTKEYS.read().unwrap();
         hotkeys_read_lock.as_ref().unwrap().menu.clone()
     };
 
-    // Click the "Next" button on the victory/defeat screen
-    let _ = interaction::click(settings.game.next_button.clone(), Some(2000));
-    // Decline the freeplay offer
-    let _ = interaction::click(settings.game.freeplay_button.clone(), Some(2000));
-    // Open the in-game menu (press Escape twice to get to the restart option)
+    // Helper: take a fresh screenshot and attempt to find + click a button by
+    // its label text.  Retries up to `max_attempts` times with a 1 s pause
+    // between each attempt so we can tolerate slow UI transitions.
+    let click_button = move |text: &str, mode: ClickTextMode, delay_ms: u64, max_attempts: u32| {
+        for attempt in 1..=max_attempts {
+            let screenshot = capture_screenshot(debug);
+            match interaction::click_text(&screenshot, text, lang, mode, Some(delay_ms), debug) {
+                Ok(_) => return,
+                Err(e) => {
+                    println!(
+                        "Button '{}' not found (attempt {}/{}): {}",
+                        text, attempt, max_attempts, e
+                    );
+                    if attempt < max_attempts {
+                        sleep(Duration::from_millis(1000));
+                    }
+                }
+            }
+        }
+        println!(
+            "Warning: could not locate '{}' button after {} attempts – continuing anyway",
+            text, max_attempts
+        );
+    };
+
+    // 1. Click "NEXT" directly (it is a plain button label).
+    click_button("NEXT", ClickTextMode::Center, 2000, 5);
+
+    // 2. Click "FREEPLAY" (a menu-item style option; click above the text).
+    click_button("FREEPLAY", ClickTextMode::Above, 2000, 5);
+
+    // 3. Open the in-game pause menu (Escape × 2).
     let _ = interaction::press_key(menu_hotkey.clone(), Some(1000));
     let _ = interaction::press_key(menu_hotkey, Some(1000));
-    // Click "Restart" and then confirm
-    let _ = interaction::click(settings.game.restart_game_button.clone(), Some(1000));
-    let _ = interaction::click(settings.game.confirm_button.clone(), Some(1000));
+
+    // 4. Click "RESTART" in the pause menu (menu-item style; click above).
+    click_button("RESTART", ClickTextMode::Above, 1000, 5);
+
+    // 5. Confirm the restart (plain "OK" button; click directly).
+    click_button("OK", ClickTextMode::Center, 1000, 5);
 
     // Clear placed towers so the next game starts fresh
     {
@@ -532,7 +565,7 @@ fn main() {
                         match on_win_action {
                             OnWinAction::Restart => {
                                 game_wins += 1;
-                                restart_game(&settings);
+                                restart_game(lang, args.debug);
                                 last_seen_round = 0;
                                 round_unchanged_count = 0;
                             }
@@ -662,7 +695,7 @@ fn main() {
                 match on_win_action {
                     OnWinAction::Restart => {
                         println!("Restarting game...");
-                        restart_game(&settings);
+                        restart_game(lang, args.debug);
                         last_seen_round = 0;
                     }
                     OnWinAction::EndGame => {
