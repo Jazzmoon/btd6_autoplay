@@ -597,6 +597,18 @@ fn main() {
                 image_to_string(&convert_to_rusty_image(defeat_image), &rt_defeat_args),
             );
 
+            // If debug is enabled, print the OCR outputs for victory and defeat banners
+            if args.debug {
+                println!(
+                    "Victory banner OCR output: '{}'",
+                    victory_banner.as_ref().unwrap_or(&"".to_string())
+                );
+                println!(
+                    "Defeat banner OCR output: '{}'",
+                    defeat_banner.as_ref().unwrap_or(&"".to_string())
+                );
+            }
+
             //* NOTE: DEFEAT doesn't see the middle `e` character for some reason. It sees DEFAT...
             let did_win: Option<bool> = match (victory_banner, defeat_banner) {
                 (Ok(v), Ok(d)) => {
