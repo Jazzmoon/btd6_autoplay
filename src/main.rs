@@ -411,7 +411,7 @@ fn main() {
     }
 
     let mut last_seen_round = 0;
-    let mut empty_round_counter_count = 0;
+    let mut round_unchanged_count: u32 = 0;
     let (mut game_wins, mut game_losses) = (0, 0);
 
     while args.number == -1 || game_wins + game_losses < args.number {
@@ -447,93 +447,170 @@ fn main() {
             .trim()
             .to_string();
 
-        // Check if the round counter is empty -- Which will trigger our "Chick winner" check
-        if output.is_empty() {
-            empty_round_counter_count += 1;
+        if args.debug {
+            println!("Output: '{}'", output);
+        }
 
-            if empty_round_counter_count >= 3 {
-                empty_round_counter_count = 0;
+        // Parse the round counter output into (current_round, total_rounds)
+        let parsed_round: Option<(i32, i32)> = if output.is_empty() {
+            None
+        } else if output.contains('/') {
+            let parts: Vec<&str> = output.split('/').collect();
+            match (
+                parts[0].trim().parse::<i32>(),
+                parts[1].trim().parse::<i32>(),
+            ) {
+                (Ok(cur), Ok(tot)) => Some((cur, tot)),
+                (Ok(cur), Err(_)) => Some((cur, -1)),
+                _ => None,
+            }
+        } else if let Ok(cr) = output.trim().parse::<i32>() {
+            Some((cr, -1))
+        } else {
+            None
+        };
 
-                let processing_actions = ImageProcessingType::Resize
-                    | ImageProcessingType::Grayscale
-                    | ImageProcessingType::Invert;
-                let did_win: bool;
+        if let Some((current_round, total_rounds)) = parsed_round {
+            if current_round != last_seen_round {
+                round_unchanged_count = 0;
+                last_seen_round = current_round;
 
-                let (victory_image, defeat_image) = (
-                    capture_area(
-                        screenshot.clone(),
-                        settings.game.victory_banner.clone(),
-                        ImageProcessingType::None,
-                        None,
-                        None,
-                        if args.debug {
-                            Some("victory_banner".to_string())
-                        } else {
-                            None
+                if total_rounds == -1 {
+                    println!("The current round is: {}", current_round);
+                } else {
+                    println!("The current round is: {}/{}", current_round, total_rounds);
+                }
+
+                // Extract everything we need from CURRENT_MAP in a single read-lock scope,
+                // before executing actions (which may themselves acquire a write lock).
+                let (restart_on_round, on_win_action, round_actions) = {
+                    let current_map_read_lock = CURRENT_MAP.read().unwrap();
+                    let current_map = current_map_read_lock.as_ref().unwrap();
+                    let actions = current_map
+                        .instructions
+                        .get(&current_round)
+                        .cloned()
+                        .unwrap_or_default();
+                    (
+                        current_map.restart_on_round,
+                        current_map.on_win_action.clone(),
+                        actions,
+                    )
+                };
+
+                for action_str in &round_actions {
+                    println!("Executing action: {}", action_str);
+                    match action_parser::parse_action(action_str) {
+                        Ok(action) => match action.run() {
+                            Ok(_) => println!("Successfully ran action: {:?}", action_str),
+                            Err(e) => println!("Failed to run action: {:?}", e),
                         },
-                    ),
-                    capture_area(
-                        screenshot.clone(),
-                        settings.game.defeat_banner.clone(),
-                        processing_actions,
-                        Some(200),
-                        Some(0.9),
-                        if args.debug {
-                            Some("defeat_banner".to_string())
-                        } else {
-                            None
-                        },
-                    ),
-                );
-
-                let (victory_banner, defeat_banner) = (
-                    image_to_string(&convert_to_rusty_image(victory_image), &rt_victory_args),
-                    image_to_string(&convert_to_rusty_image(defeat_image), &rt_defeat_args),
-                );
-
-                match (victory_banner, defeat_banner) {
-                    (Ok(victory_s), Ok(defeat_s)) => {
-                        let victory = victory_s.trim().to_string().to_uppercase();
-
-                        //* NOTE: DEFEAT doesn't see the middle `e` character for some reason. It sees DEFAT...
-                        let defeat = defeat_s.trim().to_string().to_uppercase();
-
-                        if (victory.is_empty() && defeat.is_empty())
-                            || (!victory.contains("VICTORY")
-                                && !(defeat.starts_with("DE") && defeat.ends_with("AT")))
-                        {
-                            sleep(Duration::from_secs(1));
-                            continue;
-                        }
-                        did_win = victory.contains("VICTORY");
-                    }
-                    (Ok(victory_s), Err(_)) => {
-                        let victory = victory_s.trim().to_string().to_uppercase();
-                        if victory.is_empty() || !victory.contains("VICTORY") {
-                            sleep(Duration::from_secs(1));
-                            continue;
-                        }
-                        did_win = true;
-                    }
-                    (Err(_), Ok(defeat_s)) => {
-                        //* NOTE: DEFEAT doesn't see the middle `e` character for some reason. It sees DEFAT...
-                        let defeat = defeat_s.trim().to_string().to_uppercase();
-
-                        if defeat.is_empty()
-                            || !(defeat.starts_with("DE") && defeat.ends_with("AT"))
-                        {
-                            sleep(Duration::from_secs(1));
-                            continue;
-                        }
-                        did_win = false;
-                    }
-                    _ => {
-                        sleep(Duration::from_secs(1));
-                        continue;
+                        Err(e) => println!("Action Parser failed to parse an action: {:?}", e),
                     }
                 }
 
-                if did_win {
+                // If this round matches restart_on_round, trigger the restart sequence now
+                // (all towers have been placed; let the configured action decide what happens next)
+                if let Some(target_round) = restart_on_round {
+                    if current_round == target_round {
+                        println!(
+                            "Reached restart_on_round ({}), triggering restart.",
+                            target_round
+                        );
+                        match on_win_action {
+                            OnWinAction::Restart => {
+                                game_wins += 1;
+                                restart_game(&settings);
+                                last_seen_round = 0;
+                                round_unchanged_count = 0;
+                            }
+                            OnWinAction::EndGame => {
+                                println!(
+                                    "EndGame action - exiting after {} win(s) and {} loss(es).",
+                                    game_wins, game_losses
+                                );
+                                return;
+                            }
+                            OnWinAction::Continue => {
+                                println!("Continuing in freeplay after reaching restart_on_round.");
+                            }
+                        }
+                    }
+                }
+            } else {
+                round_unchanged_count += 1;
+            }
+        } else {
+            // Unparseable output counts as unchanged
+            round_unchanged_count += 1;
+        }
+
+        // After 5 iterations with no round change, check for victory/defeat
+        if round_unchanged_count >= 5 {
+            round_unchanged_count = 0;
+
+            let processing_actions = ImageProcessingType::Resize
+                | ImageProcessingType::Grayscale
+                | ImageProcessingType::Invert;
+
+            let (victory_image, defeat_image) = (
+                capture_area(
+                    screenshot.clone(),
+                    settings.game.victory_banner.clone(),
+                    ImageProcessingType::None,
+                    None,
+                    None,
+                    if args.debug {
+                        Some("victory_banner".to_string())
+                    } else {
+                        None
+                    },
+                ),
+                capture_area(
+                    screenshot.clone(),
+                    settings.game.defeat_banner.clone(),
+                    processing_actions,
+                    Some(200),
+                    Some(0.9),
+                    if args.debug {
+                        Some("defeat_banner".to_string())
+                    } else {
+                        None
+                    },
+                ),
+            );
+
+            let (victory_banner, defeat_banner) = (
+                image_to_string(&convert_to_rusty_image(victory_image), &rt_victory_args),
+                image_to_string(&convert_to_rusty_image(defeat_image), &rt_defeat_args),
+            );
+
+            //* NOTE: DEFEAT doesn't see the middle `e` character for some reason. It sees DEFAT...
+            let did_win: Option<bool> = match (victory_banner, defeat_banner) {
+                (Ok(v), Ok(d)) => {
+                    let victory = v.trim().to_uppercase();
+                    let defeat = d.trim().to_uppercase();
+                    if victory.contains("VICTORY") {
+                        Some(true)
+                    } else if defeat.starts_with("DE") && defeat.ends_with("AT") {
+                        Some(false)
+                    } else {
+                        None
+                    }
+                }
+                (Ok(v), Err(_)) => {
+                    let victory = v.trim().to_uppercase();
+                    if victory.contains("VICTORY") { Some(true) } else { None }
+                }
+                (Err(_), Ok(d)) => {
+                    let defeat = d.trim().to_uppercase();
+                    if defeat.starts_with("DE") && defeat.ends_with("AT") { Some(false) } else { None }
+                }
+                _ => None,
+            };
+
+            if let Some(won) = did_win {
+                if won {
                     println!("The game has ended. The player has won.");
                     game_wins += 1;
                 } else {
@@ -543,11 +620,7 @@ fn main() {
 
                 let on_win_action = {
                     let current_map_read_lock = CURRENT_MAP.read().unwrap();
-                    current_map_read_lock
-                        .as_ref()
-                        .unwrap()
-                        .on_win_action
-                        .clone()
+                    current_map_read_lock.as_ref().unwrap().on_win_action.clone()
                 };
 
                 match on_win_action {
@@ -555,7 +628,6 @@ fn main() {
                         println!("Restarting game...");
                         restart_game(&settings);
                         last_seen_round = 0;
-                        empty_round_counter_count = 0;
                     }
                     OnWinAction::EndGame => {
                         println!(
@@ -565,124 +637,12 @@ fn main() {
                         return;
                     }
                     OnWinAction::Continue => {
-                        // Stay in freeplay / do nothing – the outer loop will keep running
                         println!("Continuing in freeplay...");
                     }
                 }
                 continue;
             }
-        }
-
-        if args.debug {
-            println!("Output: '{}'", output);
-        }
-
-        let current_round: i32;
-        let total_rounds: i32;
-
-        // Check if the round counter has a '/' in it
-        if output.contains('/') {
-            // Split the round counter into the current round and the total rounds by the '/'
-            let round_counter: Vec<&str> = output.split('/').collect();
-            match (
-                round_counter[0].trim().parse::<i32>(),
-                round_counter[1].trim().parse::<i32>(),
-            ) {
-                (Ok(current), Ok(total)) => {
-                    current_round = current;
-                    total_rounds = total;
-                }
-                (Ok(current), Err(_)) => {
-                    current_round = current;
-                    total_rounds = -1;
-                }
-                _ => {
-                    sleep(Duration::from_secs(1));
-                    continue;
-                }
-            }
-        } else if let Ok(cr) = output.trim().parse::<i32>() {
-            // If the round counter does not have a '/', then the current round is the outpu
-            current_round = cr;
-            total_rounds = -1;
-        } else {
-            sleep(Duration::from_secs(1));
-            continue;
-        }
-
-        // If the round counter has changed, update the last seen round
-        if current_round != last_seen_round {
-            last_seen_round = current_round;
-
-            if total_rounds == -1 {
-                println!("The current round is: {}", current_round);
-            } else {
-                println!("The current round is: {}/{}", current_round, total_rounds);
-            }
-
-            // Extract everything we need from CURRENT_MAP in a single read-lock scope,
-            // before executing actions (which may themselves acquire a write lock).
-            let (restart_on_round, on_win_action, round_actions) = {
-                let current_map_read_lock = CURRENT_MAP.read().unwrap();
-                let current_map = current_map_read_lock.as_ref().unwrap();
-                let actions = current_map
-                    .instructions
-                    .get(&current_round)
-                    .cloned()
-                    .unwrap_or_default();
-                (
-                    current_map.restart_on_round,
-                    current_map.on_win_action.clone(),
-                    actions,
-                )
-            };
-
-            for action_str in &round_actions {
-                println!("Executing action: {}", action_str);
-                match action_parser::parse_action(action_str) {
-                    Ok(action) => match action.run() {
-                        Ok(_) => {
-                            println!("Successfully ran action: {:?}", action_str);
-                        }
-                        Err(e) => {
-                            println!("Failed to run action: {:?}", e);
-                        }
-                    },
-                    Err(e) => {
-                        println!("Action Parser failed to parse an action: {:?}", e);
-                    }
-                }
-            }
-
-            // If this round matches restart_on_round, trigger the restart sequence now
-            // (all towers have been placed; let the configured action decide what happens next)
-            if let Some(target_round) = restart_on_round {
-                if current_round == target_round {
-                    println!(
-                        "Reached restart_on_round ({}), triggering restart.",
-                        target_round
-                    );
-                    match on_win_action {
-                        OnWinAction::Restart => {
-                            game_wins += 1;
-                            restart_game(&settings);
-                            last_seen_round = 0;
-                            empty_round_counter_count = 0;
-                        }
-                        OnWinAction::EndGame => {
-                            println!(
-                                "EndGame action - exiting after {} win(s) and {} loss(es).",
-                                game_wins, game_losses
-                            );
-                            return;
-                        }
-                        OnWinAction::Continue => {
-                            // Nothing to do – let the game run in freeplay
-                            println!("Continuing in freeplay after reaching restart_on_round.");
-                        }
-                    }
-                }
-            }
+            // No banner detected — round_unchanged_count already reset to 0, wait another 5 iterations
         }
 
         sleep(Duration::from_secs(1));
