@@ -16,12 +16,14 @@ use btd6_autoplay::{
     },
     utils::{
         global::{
-            CONFIG_SCREEN_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, HOTKEYS, MAP_CONFIG, GENERAL_CONFIG,
+            CONFIG_SCREEN_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, GENERAL_CONFIG,
+            HOTKEYS, MAP_CONFIG,
         },
         interaction,
         location_finder::location_finder,
         parsing::{
-            load_hotkeys, load_map, load_map_config, load_settings, map_config_name_to_map_name, load_general_config,
+            load_general_config, load_hotkeys, load_map, load_map_config, load_settings,
+            map_config_name_to_map_name,
         },
         screenshot::{
             capture_area, capture_screenshot, convert_to_rusty_image, ImageProcessingType,
@@ -135,7 +137,10 @@ fn main() {
             match window.app_name() {
                 Ok(ref name) => {
                     // If the lowercase name contains any of GENERAL_CONFIG.window_title_search_terms, then we have found the window!
-                    if search_terms.iter().any(|term| name.to_lowercase().contains(term)) {
+                    if search_terms
+                        .iter()
+                        .any(|term| name.to_lowercase().contains(term))
+                    {
                         bloons_td6_window = Some(window.clone());
                         let fragile_window = Fragile::new(window);
                         let mut current_window_write_lock = CURRENT_WINDOW.write().unwrap();
@@ -149,7 +154,10 @@ fn main() {
                     // If we can't get the app name, we can still get the window title, which might be helpful for debugging
                     match window.title() {
                         Ok(title) => {
-                            if search_terms.iter().any(|term| title.to_lowercase().contains(term)) {
+                            if search_terms
+                                .iter()
+                                .any(|term| title.to_lowercase().contains(term))
+                            {
                                 bloons_td6_window = Some(window.clone());
                                 let fragile_window = Fragile::new(window);
                                 let mut current_window_write_lock = CURRENT_WINDOW.write().unwrap();
@@ -158,10 +166,10 @@ fn main() {
                             } else {
                                 seen_windows.push(title.to_string());
                             }
-                        },
+                        }
                         Err(_) => seen_windows.push("Unknown Window".to_string()),
                     }
-                },
+                }
             }
         }
     }
@@ -178,8 +186,12 @@ fn main() {
         panic!("The BloonsTD6.exe window is minimized. Please open the game and try again.");
     }
 
-    let (window_x, window_y, window_width, window_height) =
-        (window.x().expect("Game window must exist to continue"), window.y().expect("Game window must exist to continue"), window.width().expect("Game window must exist to continue"), window.height().expect("Game window must exist to continue"));
+    let (window_x, window_y, window_width, window_height) = (
+        window.x().expect("Game window must exist to continue"),
+        window.y().expect("Game window must exist to continue"),
+        window.width().expect("Game window must exist to continue"),
+        window.height().expect("Game window must exist to continue"),
+    );
 
     println!(
         "Detected window geometry: x={}, y={}, width={}, height={}",
@@ -557,7 +569,7 @@ fn main() {
                 capture_area(
                     screenshot.clone(),
                     settings.game.victory_banner.clone(),
-                    ImageProcessingType::None,
+                    processing_actions,
                     None,
                     None,
                     if args.debug {
@@ -600,11 +612,19 @@ fn main() {
                 }
                 (Ok(v), Err(_)) => {
                     let victory = v.trim().to_uppercase();
-                    if victory.contains("VICTORY") { Some(true) } else { None }
+                    if victory.contains("VICTORY") {
+                        Some(true)
+                    } else {
+                        None
+                    }
                 }
                 (Err(_), Ok(d)) => {
                     let defeat = d.trim().to_uppercase();
-                    if defeat.starts_with("DE") && defeat.ends_with("AT") { Some(false) } else { None }
+                    if defeat.starts_with("DE") && defeat.ends_with("AT") {
+                        Some(false)
+                    } else {
+                        None
+                    }
                 }
                 _ => None,
             };
@@ -620,7 +640,11 @@ fn main() {
 
                 let on_win_action = {
                     let current_map_read_lock = CURRENT_MAP.read().unwrap();
-                    current_map_read_lock.as_ref().unwrap().on_win_action.clone()
+                    current_map_read_lock
+                        .as_ref()
+                        .unwrap()
+                        .on_win_action
+                        .clone()
                 };
 
                 match on_win_action {
