@@ -487,7 +487,7 @@ fn main() {
         }
 
         // Get the round counter from the screenshot
-        let output = image_to_string(&convert_to_rusty_image(round_counter), &rt_round_args)
+        let output = image_to_string(&convert_to_rusty_image(&round_counter), &rt_round_args)
             .unwrap()
             .trim()
             .to_string();
@@ -626,8 +626,8 @@ fn main() {
             );
 
             let (victory_banner, defeat_banner) = (
-                image_to_string(&convert_to_rusty_image(victory_image), &rt_victory_args),
-                image_to_string(&convert_to_rusty_image(defeat_image), &rt_defeat_args),
+                image_to_string(&convert_to_rusty_image(&victory_image), &rt_victory_args),
+                image_to_string(&convert_to_rusty_image(&defeat_image), &rt_defeat_args),
             );
 
             // If debug is enabled, print the OCR outputs for victory and defeat banners

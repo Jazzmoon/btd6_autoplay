@@ -123,8 +123,8 @@ pub fn capture_area(
     return dyn_image;
 }
 
-pub fn convert_to_rusty_image(img: DynamicImage) -> Image {
-    match Image::from_dynamic_image(&img) {
+pub fn convert_to_rusty_image(img: &DynamicImage) -> Image {
+    match Image::from_dynamic_image(img) {
         Ok(image) => image,
         Err(err) => panic!("Failed to convert image: {}", err),
     }
@@ -142,7 +142,7 @@ pub fn find_text_on_screen(
     lang: &str,
     debug: bool,
 ) -> Option<CoordsArea> {
-    let image = convert_to_rusty_image(screenshot.clone());
+    let image = convert_to_rusty_image(screenshot);
     let args = RTArgs {
         lang: lang.into(),
         // PSM 11: sparse text – finds individual words anywhere in the image,
@@ -185,10 +185,22 @@ pub fn find_text_on_screen(
         if text != target_upper {
             continue;
         }
-        let left = cols[6].trim().parse::<i32>().unwrap_or(-1);
-        let top = cols[7].trim().parse::<i32>().unwrap_or(-1);
-        let width = cols[8].trim().parse::<i32>().unwrap_or(0);
-        let height = cols[9].trim().parse::<i32>().unwrap_or(0);
+        let left = match cols[6].trim().parse::<i32>() {
+            Ok(v) => v,
+            Err(_) => { if debug { println!("find_text_on_screen: failed to parse 'left' for '{}'", text); } continue; }
+        };
+        let top = match cols[7].trim().parse::<i32>() {
+            Ok(v) => v,
+            Err(_) => { if debug { println!("find_text_on_screen: failed to parse 'top' for '{}'", text); } continue; }
+        };
+        let width = match cols[8].trim().parse::<i32>() {
+            Ok(v) => v,
+            Err(_) => { if debug { println!("find_text_on_screen: failed to parse 'width' for '{}'", text); } continue; }
+        };
+        let height = match cols[9].trim().parse::<i32>() {
+            Ok(v) => v,
+            Err(_) => { if debug { println!("find_text_on_screen: failed to parse 'height' for '{}'", text); } continue; }
+        };
         if left >= 0 && top >= 0 && width > 0 && height > 0 {
             if debug {
                 println!(
