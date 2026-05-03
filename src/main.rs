@@ -523,6 +523,12 @@ fn main() {
                         .flat_map(|(_, actions)| actions.iter())
                         .cloned()
                         .collect::<Vec<_>>();
+                    Logger::debug(format!(
+                        "Executing {} actions for rounds {} to {}...",
+                        actions.len(),
+                        previous_round + 1,
+                        current_round
+                    ));
                     (
                         current_map.restart_on_round,
                         current_map.on_win_action.clone(),

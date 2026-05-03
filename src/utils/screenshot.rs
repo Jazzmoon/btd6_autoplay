@@ -50,7 +50,7 @@ pub fn capture_screenshot() -> DynamicImage {
         }
         Err(err) => {
             Logger::error(format!("Screenshot failed to capture properly: {:?}", err));
-            panic!("Screenshot failed to capture properly: {:?}", err);
+            panic!("Screenshot failed to capture properly: {:?}", err)
         }
     }
 }
