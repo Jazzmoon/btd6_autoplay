@@ -2,7 +2,7 @@ use std::error::Error as StdError;
 
 use crate::{
     models::{action_parser::ActionTrait, coords::Coords, hotkeys::Hotkey, tower::Tower},
-    utils::global::CURRENT_MAP,
+    utils::{global::CURRENT_MAP, logger::Logger},
 };
 
 pub struct Place {
@@ -36,11 +36,14 @@ impl ActionTrait for Place {
                 let mut current_map_write_lock = CURRENT_MAP.write().unwrap();
                 let current_map = current_map_write_lock.as_mut().unwrap();
                 current_map.towers.insert(self.tower_name.clone(), tower);
-                println!("Successfully placed tower {}", self.tower_name);
+                Logger::debug(format!("Successfully placed tower {}", self.tower_name));
                 Ok(())
             }
             Err(e) => {
-                println!("Failed to place tower {}: {:?}", self.tower_name, e);
+                Logger::error(format!(
+                    "Failed to place tower {}: {:?}",
+                    self.tower_name, e
+                ));
                 Err(e.into())
             }
         }

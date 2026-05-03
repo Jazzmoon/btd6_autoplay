@@ -5,35 +5,35 @@ screen:
     h: 1140
 game:
     round_counter:
-        x: 1827
-        y: 46
-        w: 256
-        h: 50
+        x: 1850
+        y: 40
+        w: 275
+        h: 65
     victory_banner:
-        x: 782
-        y: 107
-        w: 1006
-        h: 249
+        x: 916
+        y: 133
+        w: 749
+        h: 172
     defeat_banner:
         x: 965
         y: 382
         w: 632
         h: 156
     next_button:
-        x: 1281
-        y: 1215
+        x: 1285
+        y: 1210
     freeplay_button:
-        x: 1598
-        y: 1129
+        x: 1595
+        y: 1125
     freeplay_ok_button:
-        x: 1279
-        y: 1012
+        x: 1218
+        y: 795
     restart_game_button:
-        x: 1426
-        y: 1121
+        x: 1430
+        y: 1125
     confirm_button:
-        x: 1521
-        y: 973
+        x: 1520
+        y: 975
     home_button:
         x: 1128
         y: 1115

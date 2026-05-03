@@ -5,6 +5,7 @@ use rusty_tesseract::Image;
 use crate::models::coords::CoordsArea;
 
 use super::global::CURRENT_WINDOW;
+use super::logger::{LogLevel, Logger};
 
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -18,20 +19,37 @@ bitflags! {
     }
 }
 
-pub fn capture_screenshot(debug: bool) -> DynamicImage {
+pub fn capture_screenshot() -> DynamicImage {
     let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
     let current_window = current_window_read_lock.as_ref().unwrap().get();
     match current_window.capture_image() {
         Ok(window_img) => {
             let dyn_image = DynamicImage::ImageRgba8(window_img);
-            if debug {
-                println!("Window position: ({}, {})", current_window.x().expect("Game window must exist to continue"), current_window.y().expect("Game window must exist to continue"));
-                println!("Window size: {}x{}", current_window.width().expect("Game window must exist to continue"), current_window.height().expect("Game window must exist to continue"));
+            if Logger::is_enabled(LogLevel::Debug) {
+                Logger::debug(format!(
+                    "Window position: ({}, {})",
+                    current_window
+                        .x()
+                        .expect("Game window must exist to continue"),
+                    current_window
+                        .y()
+                        .expect("Game window must exist to continue")
+                ));
+                Logger::debug(format!(
+                    "Window size: {}x{}",
+                    current_window
+                        .width()
+                        .expect("Game window must exist to continue"),
+                    current_window
+                        .height()
+                        .expect("Game window must exist to continue")
+                ));
                 let _ = dyn_image.save("debug/bloons_window_capture.png");
             }
             dyn_image
         }
         Err(err) => {
+            Logger::error(format!("Screenshot failed to capture properly: {:?}", err));
             panic!("Screenshot failed to capture properly: {:?}", err);
         }
     }
@@ -43,8 +61,15 @@ pub fn capture_area(
     image_processing: ImageProcessingType,
     grayscale_threshold: Option<i32>,
     contrast_value: Option<f32>,
-    debug_image_name: Option<String>,
+    debug_image_name: String,
 ) -> DynamicImage {
+    if Logger::is_enabled(LogLevel::Debug) {
+        Logger::debug(format!(
+            "Capturing area '{}' at x={}, y={}, w={}, h={} with processing {:?}, grayscale_threshold={:?}, contrast={:?}",
+            debug_image_name, ca.x, ca.y, ca.w, ca.h, image_processing, grayscale_threshold, contrast_value
+        ));
+    }
+
     let cropped_img = imageops::crop_imm(
         &screenshot,
         ca.x.try_into().unwrap(),
@@ -114,8 +139,11 @@ pub fn capture_area(
         dyn_image = DynamicImage::ImageRgba8(image_buffer);
     };
 
-    if let Some(name) = debug_image_name {
-        let _ = dyn_image.save(format!("debug/post_processing_{name}.png"));
+    if Logger::is_enabled(LogLevel::Debug) {
+        let _ = dyn_image.save(format!("debug/post_processing_{debug_image_name}.png"));
+        Logger::debug(format!(
+            "Saved debug image: debug/post_processing_{debug_image_name}.png"
+        ));
     }
 
     return dyn_image;

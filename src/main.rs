@@ -1,6 +1,4 @@
-use std::{
-    collections::HashMap, path::PathBuf, sync::atomic::Ordering, thread::sleep, time::Duration,
-};
+use std::{collections::HashMap, path::PathBuf, thread::sleep, time::Duration};
 
 use clap::Parser;
 use enigo::Settings as EnigoSettings;
@@ -16,11 +14,12 @@ use btd6_autoplay::{
     },
     utils::{
         global::{
-            CONFIG_SCREEN_PATH, CURRENT_MAP, CURRENT_WINDOW, DEBUG, ENIGO_SETTINGS, GENERAL_CONFIG,
+            CONFIG_SCREEN_PATH, CURRENT_MAP, CURRENT_WINDOW, ENIGO_SETTINGS, GENERAL_CONFIG,
             HOTKEYS, MAP_CONFIG,
         },
         interaction,
         location_finder::location_finder,
+        logger::{LogLevel, Logger},
         parsing::{
             load_general_config, load_hotkeys, load_map, load_map_config, load_settings,
             map_config_name_to_map_name,
@@ -59,9 +58,9 @@ struct Args {
     #[clap(long = "location")]
     location_finder: bool,
 
-    /// Debug mode :3
-    #[clap(long)]
-    debug: bool,
+    /// Log level (debug, info, notice, warn, error, crit, alert, emerg)
+    #[clap(long = "log-level", default_value = "warn")]
+    log_level: String,
 }
 
 /// Navigate the post-game UI and restart the current map from round 1.
@@ -100,9 +99,17 @@ fn restart_game(settings: &btd6_autoplay::models::settings::Settings) {
 fn main() {
     let args = Args::parse();
 
-    if args.debug {
-        DEBUG.store(true, Ordering::SeqCst);
-    }
+    let log_level = match LogLevel::from_str(&args.log_level) {
+        Some(level) => level,
+        None => {
+            Logger::warn(format!(
+                "Unknown log level '{}', defaulting to warn.",
+                args.log_level
+            ));
+            LogLevel::Warn
+        }
+    };
+    Logger::set_level(log_level);
 
     let _ = load_general_config();
 
@@ -116,10 +123,10 @@ fn main() {
     }
 
     // Sleep for 5 seconds to allow the user to switch to the BloonsTD6.exe window
-    println!(
+    Logger::notice(format!(
         "Please make sure the BloonsTD6.exe window is in focus within the next {:?} seconds.",
         args.sleep
-    );
+    ));
     sleep(Duration::from_secs(args.sleep));
 
     let mut bloons_td6_window: Option<Window> = None;
@@ -176,9 +183,8 @@ fn main() {
 
     if bloons_td6_window.is_none() {
         // If we didn't find an obvious match, print what we saw to help debugging.
-        if DEBUG.load(std::sync::atomic::Ordering::SeqCst) {
-            println!("Available windows:\n{}", seen_windows.join("\n"));
-        }
+        Logger::debug(format!("Available windows:\n{}", seen_windows.join("\n")));
+        Logger::error("The BloonsTD6 window was not found. Common causes on Linux: running under Wayland (screenshots may not be supported), or the process/window name is different when using Proton/Wine/Steam. Try running your game in an X11 session (or under XWayland) and ensure the window is focused. For a quick workaround you can edit the source to match the actual app name/title shown in the debug output.");
         panic!("The BloonsTD6 window was not found. Common causes on Linux: running under Wayland (screenshots may not be supported), or the process/window name is different when using Proton/Wine/Steam. Try running your game in an X11 session (or under XWayland) and ensure the window is focused. For a quick workaround you can edit the source to match the actual app name/title shown in the debug output.");
     }
     let window = bloons_td6_window.as_ref().unwrap();
@@ -193,10 +199,10 @@ fn main() {
         window.height().expect("Game window must exist to continue"),
     );
 
-    println!(
+    Logger::info(format!(
         "Detected window geometry: x={}, y={}, width={}, height={}",
         window_x, window_y, window_width, window_height
-    );
+    ));
 
     {
         let mut config_path_write_lock = CONFIG_SCREEN_PATH.write().unwrap();
@@ -206,10 +212,10 @@ fn main() {
         if !config_path_write_lock.as_ref().unwrap().exists() {
             panic!("The \"{}\" directory does not exist. Please create it and add the necessary settings.", config_path_write_lock.as_ref().unwrap().to_str().unwrap());
         }
-        println!(
+        Logger::info(format!(
             "Using config path of {:?}",
             config_path_write_lock.as_ref().unwrap()
-        );
+        ));
     }
 
     if args.location_finder {
@@ -246,13 +252,13 @@ fn main() {
     let mut map_file_name = args.map.clone();
     match map_file_name {
         Some(ref map_name) => {
-            if args.debug {
+            if Logger::is_enabled(LogLevel::Debug) {
                 // List arg and all legal map name options
                 let items = maps.iter().collect::<Vec<(&String, &String)>>();
-                println!("Map name: {}", map_name);
-                println!("Legal map name options:");
+                Logger::debug(format!("Map name: {}", map_name));
+                Logger::debug("Legal map name options:");
                 for (key, value) in &items {
-                    println!("- Key: {} | Value: {}", key, value);
+                    Logger::debug(format!("- Key: {} | Value: {}", key, value));
                 }
             }
             if !maps.contains_key(map_name) {
@@ -298,10 +304,10 @@ fn main() {
                 panic!("There are no difficulties available for the map provided.");
             } else if options.len() == 1 {
                 difficulty = Some(options[0].clone());
-                println!(
+                Logger::info(format!(
                     "Only one difficulty available, selecting \"{}\"",
                     difficulty.clone().unwrap()
-                );
+                ));
             } else {
                 let selection = Select::new("Please select a difficulty:", options).prompt();
                 match selection {
@@ -331,10 +337,10 @@ fn main() {
                 panic!("There are no gamemodes available for the map and difficulty provided.");
             } else if options.len() == 1 {
                 gamemode = Some(options[0].clone());
-                println!(
+                Logger::info(format!(
                     "Only one gamemode available, selecting \"{}\"",
                     gamemode.clone().unwrap()
-                );
+                ));
             } else {
                 let selection = Select::new("Please select a gamemode:", options).prompt();
                 match selection {
@@ -349,10 +355,10 @@ fn main() {
     load_map(map_config, difficulty.clone(), gamemode.clone());
 
     // Wait for the user to switch to the BloonsTD6.exe window
-    println!(
+    Logger::notice(format!(
         "Please make sure the BloonsTD6.exe window is in focus within the next {:?} seconds.",
         args.sleep
-    );
+    ));
     sleep(Duration::from_secs(args.sleep));
 
     // Read the current map and print it
@@ -362,26 +368,29 @@ fn main() {
     // Load tesseract
     let tessdata_dir = std::env::current_dir().unwrap().join("tessdata");
     let btd6_tessdata_path = tessdata_dir.join("btd6.traineddata");
-    if args.debug {
+    if Logger::is_enabled(LogLevel::Debug) {
         // Print the tessdata_dir and btd6_tessdata_path
-        println!("tessdata_dir: {}", tessdata_dir.to_string_lossy());
-        println!(
+        Logger::debug(format!("tessdata_dir: {}", tessdata_dir.to_string_lossy()));
+        Logger::debug(format!(
             "btd6_tessdata_path: {}",
             btd6_tessdata_path.to_string_lossy()
-        );
+        ));
     }
     let lang = if btd6_tessdata_path.exists() {
         std::env::set_var("TESSDATA_PREFIX", &tessdata_dir);
-        if args.debug {
-            println!("TESSDATA_PREFIX set to: {}", tessdata_dir.to_string_lossy());
-            println!("Using tesseract data language: btd6+eng");
+        if Logger::is_enabled(LogLevel::Debug) {
+            Logger::debug(format!(
+                "TESSDATA_PREFIX set to: {}",
+                tessdata_dir.to_string_lossy()
+            ));
+            Logger::debug("Using tesseract data language: btd6+eng");
         }
         "btd6+eng"
     } else {
         std::env::remove_var("TESSDATA_PREFIX");
-        if args.debug {
-            println!("TESSDATA_PREFIX removed");
-            println!("Using tesseract data language: eng");
+        if Logger::is_enabled(LogLevel::Debug) {
+            Logger::debug("TESSDATA_PREFIX removed");
+            Logger::debug("Using tesseract data language: eng");
         }
         "eng"
     };
@@ -417,10 +426,18 @@ fn main() {
     {
         let map_config_read_lock = MAP_CONFIG.read().unwrap();
         let map_config = map_config_read_lock.as_ref().unwrap();
+        Logger::debug(format!(
+            "Round counter mode: {:?}",
+            map_config.round_counter_mode
+        ));
         if map_config.round_counter_mode.eq(&RoundCounterMode::Dark) {
             threshold_value = 128;
         }
     }
+    Logger::debug(format!(
+        "Round counter threshold value set to {}",
+        threshold_value
+    ));
 
     let mut last_seen_round = 0;
     let mut round_unchanged_count: u32 = 0;
@@ -428,7 +445,7 @@ fn main() {
 
     while args.number == -1 || game_wins + game_losses < args.number {
         // Get screenshot of the game window
-        let screenshot = capture_screenshot(args.debug);
+        let screenshot = capture_screenshot();
 
         // Do round counter processing
         let processing_actions = ImageProcessingType::Resize
@@ -442,14 +459,10 @@ fn main() {
             processing_actions,
             Some(threshold_value),
             Some(0.5),
-            if args.debug {
-                Some("round_counter".to_string())
-            } else {
-                None
-            },
+            "round_counter".to_string(),
         );
 
-        if args.debug {
+        if Logger::is_enabled(LogLevel::Debug) {
             let _ = round_counter.save("debug/round_counter.png");
         }
 
@@ -459,8 +472,8 @@ fn main() {
             .trim()
             .to_string();
 
-        if args.debug {
-            println!("Output: '{}'", output);
+        if Logger::is_enabled(LogLevel::Debug) {
+            Logger::debug(format!("Output: '{}'", output));
         }
 
         // Parse the round counter output into (current_round, total_rounds)
@@ -485,12 +498,16 @@ fn main() {
         if let Some((current_round, total_rounds)) = parsed_round {
             if current_round != last_seen_round {
                 round_unchanged_count = 0;
+                let previous_round = last_seen_round;
                 last_seen_round = current_round;
 
                 if total_rounds == -1 {
-                    println!("The current round is: {}", current_round);
+                    Logger::info(format!("The current round is: {}", current_round));
                 } else {
-                    println!("The current round is: {}/{}", current_round, total_rounds);
+                    Logger::info(format!(
+                        "The current round is: {}/{}",
+                        current_round, total_rounds
+                    ));
                 }
 
                 // Extract everything we need from CURRENT_MAP in a single read-lock scope,
@@ -498,11 +515,14 @@ fn main() {
                 let (restart_on_round, on_win_action, round_actions) = {
                     let current_map_read_lock = CURRENT_MAP.read().unwrap();
                     let current_map = current_map_read_lock.as_ref().unwrap();
+                    // Get all missed instructions in range (last_seen_round + 1, current_round)
                     let actions = current_map
                         .instructions
-                        .get(&current_round)
+                        .iter()
+                        .filter(|&(round, _)| *round > previous_round && *round <= current_round)
+                        .flat_map(|(_, actions)| actions.iter())
                         .cloned()
-                        .unwrap_or_default();
+                        .collect::<Vec<_>>();
                     (
                         current_map.restart_on_round,
                         current_map.on_win_action.clone(),
@@ -510,14 +530,27 @@ fn main() {
                     )
                 };
 
+                if round_actions.is_empty() {
+                    Logger::debug(format!(
+                        "No actions found for rounds {}-{}",
+                        previous_round + 1,
+                        current_round
+                    ));
+                }
+
                 for action_str in &round_actions {
-                    println!("Executing action: {}", action_str);
+                    Logger::info(format!("Executing action: {}", action_str));
                     match action_parser::parse_action(action_str) {
                         Ok(action) => match action.run() {
-                            Ok(_) => println!("Successfully ran action: {:?}", action_str),
-                            Err(e) => println!("Failed to run action: {:?}", e),
+                            Ok(_) => {
+                                Logger::info(format!("Successfully ran action: {:?}", action_str))
+                            }
+                            Err(e) => Logger::error(format!("Failed to run action: {:?}", e)),
                         },
-                        Err(e) => println!("Action Parser failed to parse an action: {:?}", e),
+                        Err(e) => Logger::error(format!(
+                            "Action Parser failed to parse an action: {:?}",
+                            e
+                        )),
                     }
                 }
 
@@ -525,10 +558,10 @@ fn main() {
                 // (all towers have been placed; let the configured action decide what happens next)
                 if let Some(target_round) = restart_on_round {
                     if current_round == target_round {
-                        println!(
+                        Logger::notice(format!(
                             "Reached restart_on_round ({}), triggering restart.",
                             target_round
-                        );
+                        ));
                         match on_win_action {
                             OnWinAction::Restart => {
                                 game_wins += 1;
@@ -537,28 +570,39 @@ fn main() {
                                 round_unchanged_count = 0;
                             }
                             OnWinAction::EndGame => {
-                                println!(
+                                Logger::notice(format!(
                                     "EndGame action - exiting after {} win(s) and {} loss(es).",
                                     game_wins, game_losses
-                                );
+                                ));
                                 return;
                             }
                             OnWinAction::Continue => {
-                                println!("Continuing in freeplay after reaching restart_on_round.");
+                                Logger::info(
+                                    "Continuing in freeplay after reaching restart_on_round.",
+                                );
                             }
                         }
                     }
                 }
             } else {
                 round_unchanged_count += 1;
+                Logger::debug(format!(
+                    "Round unchanged at {} (count={})",
+                    current_round, round_unchanged_count
+                ));
             }
         } else {
             // Unparseable output counts as unchanged
             round_unchanged_count += 1;
+            Logger::debug(format!(
+                "Unparseable round counter output '{}' (count={})",
+                output, round_unchanged_count
+            ));
         }
 
         // After 5 iterations with no round change, check for victory/defeat
         if round_unchanged_count >= 5 {
+            Logger::debug("Round unchanged for 5 iterations; checking victory/defeat");
             round_unchanged_count = 0;
 
             let processing_actions = ImageProcessingType::Resize
@@ -572,11 +616,7 @@ fn main() {
                     processing_actions,
                     None,
                     None,
-                    if args.debug {
-                        Some("victory_banner".to_string())
-                    } else {
-                        None
-                    },
+                    "victory_banner".to_string(),
                 ),
                 capture_area(
                     screenshot.clone(),
@@ -584,11 +624,7 @@ fn main() {
                     processing_actions,
                     Some(200),
                     Some(0.9),
-                    if args.debug {
-                        Some("defeat_banner".to_string())
-                    } else {
-                        None
-                    },
+                    "defeat_banner".to_string(),
                 ),
             );
 
@@ -598,15 +634,15 @@ fn main() {
             );
 
             // If debug is enabled, print the OCR outputs for victory and defeat banners
-            if args.debug {
-                println!(
+            if Logger::is_enabled(LogLevel::Debug) {
+                Logger::debug(format!(
                     "Victory banner OCR output: '{}'",
                     victory_banner.as_ref().unwrap_or(&"".to_string())
-                );
-                println!(
+                ));
+                Logger::debug(format!(
                     "Defeat banner OCR output: '{}'",
                     defeat_banner.as_ref().unwrap_or(&"".to_string())
-                );
+                ));
             }
 
             //* NOTE: DEFEAT doesn't see the middle `e` character for some reason. It sees DEFAT...
@@ -641,12 +677,16 @@ fn main() {
                 _ => None,
             };
 
+            if did_win.is_none() {
+                Logger::debug("Victory/defeat OCR inconclusive");
+            }
+
             if let Some(won) = did_win {
                 if won {
-                    println!("The game has ended. The player has won.");
+                    Logger::notice("The game has ended. The player has won.");
                     game_wins += 1;
                 } else {
-                    println!("The game has ended. The player has lost.");
+                    Logger::warn("The game has ended. The player has lost.");
                     game_losses += 1;
                 }
 
@@ -661,19 +701,19 @@ fn main() {
 
                 match on_win_action {
                     OnWinAction::Restart => {
-                        println!("Restarting game...");
+                        Logger::notice("Restarting game...");
                         restart_game(&settings);
                         last_seen_round = 0;
                     }
                     OnWinAction::EndGame => {
-                        println!(
+                        Logger::notice(format!(
                             "EndGame action - exiting after {} win(s) and {} loss(es).",
                             game_wins, game_losses
-                        );
+                        ));
                         return;
                     }
                     OnWinAction::Continue => {
-                        println!("Continuing in freeplay...");
+                        Logger::info("Continuing in freeplay...");
                     }
                 }
                 continue;

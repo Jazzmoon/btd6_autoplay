@@ -1,6 +1,9 @@
 use std::error::Error as StdError;
 
-use crate::{models::action_parser::ActionTrait, utils::{global::HOTKEYS, interaction}};
+use crate::{
+    models::action_parser::ActionTrait,
+    utils::{global::HOTKEYS, interaction, logger::Logger},
+};
 
 pub struct Start {
     pub fast_forward: Option<bool>,
@@ -12,8 +15,8 @@ impl ActionTrait for Start {
         let hotkeys = hotkeys_read_lock.as_ref().unwrap();
         let start_hotkey = hotkeys.start.clone();
 
-        //Print the hotkey for debugging purposes
-        println!("Start hotkey: {:?}", start_hotkey);
+        // Print the hotkey for debugging purposes
+        Logger::debug(format!("Start hotkey: {:?}", start_hotkey));
 
         // Fast-Forward means press the start hotkey twice with a short delay in between to skip the start of the round and go straight to the next one
         if self.fast_forward.unwrap_or(false) {

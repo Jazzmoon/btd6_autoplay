@@ -1,9 +1,6 @@
-use std::error::Error as StdError;
 use super::{actions, actions::ability::AbilityType, coords::Coords, hotkeys::Hotkey};
-use crate::utils::global::{
-    CURRENT_WINDOW,
-    HOTKEYS,
-};
+use crate::utils::global::HOTKEYS;
+use std::{error::Error as StdError, time::Duration};
 
 pub trait ActionTrait {
     fn run(&self) -> Result<(), Box<dyn StdError>>;
@@ -18,17 +15,15 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
     match action_array[0] {
         "ability" => {
             /*
-             * Ability action accepts one of 3 forms in the following order of priority:
-             | 1. coords (e.g. "100 240")
-             | 2. ability hotkey name (e.g. "road_spikes" or "super_monkey_storm")
-             | 3. ability hotkey (e.g. "shift 8" or "\")
-             * This means that you cannot use a custom combination of keys in which would be a valid coordinate.
-             */
+            * Ability action accepts one of 3 forms in the following order of priority:
+            | 1. coords (e.g. "100 240")
+            | 2. ability hotkey name (e.g. "road_spikes" or "super_monkey_storm")
+            | 3. ability hotkey (e.g. "shift 8" or "\")
+            * This means that you cannot use a custom combination of keys in which would be a valid coordinate.
+            */
             let args = action_array[1..].to_vec();
             if args.len() < 1 {
-                return Err(
-                    "Ability action string is invalid.".into(),
-                );
+                return Err("Ability action string is invalid.".into());
             }
             // Attempt to convert the ability hotkey to a Coords struct or Hotkey struct
             if args.len() == 2 {
@@ -40,13 +35,11 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
                 match coords {
                     Ok(coords) => {
                         if coords.len() == 2 {
-                            let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
-                            let current_window = current_window_read_lock.as_ref().unwrap().get();
                             return Ok(Box::new(actions::ability::Ability {
                                 ability: AbilityType::Coords(Coords {
                                     x: coords[0],
                                     y: coords[1],
-                                }.relative_to_window(current_window)),
+                                }),
                             }));
                         }
                     }
@@ -77,13 +70,11 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
             if coords.len() != 2 {
                 return Err("Click action requires 2 coordinates.".into());
             }
-            let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
-            let current_window = current_window_read_lock.as_ref().unwrap().get();
             return Ok(Box::new(actions::click::Click {
                 coords: Coords {
                     x: coords[0],
                     y: coords[1],
-                }.relative_to_window(current_window),
+                },
             }));
         }
         "hover" => {
@@ -94,13 +85,11 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
             if coords.len() != 2 {
                 return Err("Hover action requires 2 coordinates.".into());
             }
-            let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
-            let current_window = current_window_read_lock.as_ref().unwrap().get();
             return Ok(Box::new(actions::hover::Hover {
                 coords: Coords {
                     x: coords[0],
                     y: coords[1],
-                }.relative_to_window(current_window),
+                },
             }));
         }
         "obstacle" | "clear" => {
@@ -111,13 +100,11 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
             if coords.len() != 2 {
                 return Err("Obstacle action requires 2 coordinates.".into());
             }
-            let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
-            let current_window = current_window_read_lock.as_ref().unwrap().get();
             return Ok(Box::new(actions::obstacle::Obstacle {
                 coords: Coords {
                     x: coords[0],
                     y: coords[1],
-                }.relative_to_window(current_window),
+                },
             }));
         }
         "place" => {
@@ -142,15 +129,13 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
                 tower_hotkey = hotkeys.unwrap().get(tower_type_name);
             }
 
-            let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
-            let current_window = current_window_read_lock.as_ref().unwrap().get();
             return Ok(Box::new(actions::place::Place {
                 tower_name: tower_name.to_string(),
                 tower_type_name: tower_type_name.to_string(),
                 coords: Coords {
                     x: coords[0],
                     y: coords[1],
-                }.relative_to_window(current_window),
+                },
                 tower_hotkey,
             }));
         }
@@ -161,18 +146,46 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
             }));
         }
         "sleep" => {
-            let sleep_time = action_array[1].parse::<u64>()?;
-            return Ok(Box::new(actions::sleep::Sleep { sleep_time }));
+            // Determine if the sleep string is a number, or a number + unit (e.g. "10s", "2m"), using regex
+            let time_re = regex::Regex::new(r"^(\d+)(ms|s|m|h|d)?$").unwrap();
+            // If the regex is not matched, return an error
+            if !time_re.is_match(action_array[1]) {
+                return Err("Invalid sleep time format".into());
+            }
+            // Split the incoming string into the number and unit (default to milliseconds if no unit is provided)
+            let re_match = time_re.captures(action_array[1]).unwrap();
+            let sleep_time = re_match
+                .get(1)
+                .and_then(|s| s.as_str().parse::<u64>().ok())
+                .ok_or("Invalid sleep time format")?;
+            let sleep_units = re_match.get(2).map(|s| s.as_str());
+
+            let sleep_duration = match sleep_units {
+                None | Some("ms") => Duration::from_millis(sleep_time),
+                Some("s") => Duration::from_secs(sleep_time),
+                Some("m") => Duration::from_secs(sleep_time * 60),
+                Some("h") => Duration::from_secs(sleep_time * 60 * 60),
+                Some("d") => Duration::from_secs(sleep_time * 60 * 60 * 24),
+                _ => {
+                    return Err("Invalid sleep units".into());
+                }
+            };
+
+            return Ok(Box::new(actions::sleep::Sleep {
+                sleep_time: sleep_duration,
+            }));
         }
         "start" => {
             if action_array.len() > 2 {
-                return Err("Start action can only take one optional argument: 'fast-forward'.".into());
+                return Err(
+                    "Start action can only take one optional argument: 'fast-forward'.".into(),
+                );
             }
             if action_array.len() == 2 && action_array[1] != "fast-forward" {
                 return Err("Start action's only optional argument is 'fast-forward'.".into());
             }
             return Ok(Box::new(actions::start::Start {
-                fast_forward: Some(action_array.len() == 2 && action_array[1] == "fast-forward")
+                fast_forward: Some(action_array.len() == 2 && action_array[1] == "fast-forward"),
             }));
         }
         "upgrade" => {

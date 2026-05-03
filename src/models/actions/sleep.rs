@@ -1,15 +1,15 @@
-use std::error::Error as StdError;
+use std::{error::Error as StdError, thread::sleep, time::Duration};
 
 use crate::models::action_parser::ActionTrait;
 
 pub struct Sleep {
-    pub sleep_time: u64,
+    pub sleep_time: Duration,
 }
 
 impl ActionTrait for Sleep {
     fn run(&self) -> Result<(), Box<dyn StdError>> {
         // Sleep for the specified time
-        std::thread::sleep(std::time::Duration::from_secs(self.sleep_time));
+        sleep(self.sleep_time);
         Ok(())
     }
 }

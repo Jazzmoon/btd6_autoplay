@@ -8,7 +8,7 @@ easy:
             y: 391
         instructions:
             1:
-                #- "start fast-forward"
+                - "start fast-forward"
                 - "place obyn hero 780 653"
                 - "place dart dart 793 819"
                 - "sleep 1s"
