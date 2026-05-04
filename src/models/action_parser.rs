@@ -72,7 +72,7 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
             Ok(Box::new(actions::obstacle::Obstacle { coords }))
         }
         "place" => {
-            let args: Vec<&str> = action_array[1..].to_vec();
+            let args = &action_array[1..];
             let tower_name = args[0];
             let tower_type_name = args[1];
             let coords = parse_two_coords(&args[2..])?;
