@@ -96,19 +96,35 @@ fn restart_game(settings: &btd6_autoplay::models::settings::Settings) {
     }
 }
 
+/// Search all open windows for one whose app name or title contains any of the given search terms.
+/// Returns the matched `Window` and a list of all other window names that were seen (for debugging).
+fn find_game_window(search_terms: &[String]) -> (Option<Window>, Vec<String>) {
+    let mut found = None;
+    let mut seen = Vec::new();
+    for window in Window::all().unwrap_or_default() {
+        let name = window.app_name().or_else(|_| window.title());
+        match name {
+            Ok(n) if search_terms.iter().any(|t| n.to_lowercase().contains(t)) => {
+                found = Some(window);
+                break;
+            }
+            Ok(n) => seen.push(n),
+            Err(_) => seen.push("Unknown Window".to_string()),
+        }
+    }
+    (found, seen)
+}
+
 fn main() {
     let args = Args::parse();
 
-    let log_level = match LogLevel::from_str(&args.log_level) {
-        Some(level) => level,
-        None => {
-            Logger::warn(format!(
-                "Unknown log level '{}', defaulting to warn.",
-                args.log_level
-            ));
-            LogLevel::Warn
-        }
-    };
+    let log_level = args.log_level.parse::<LogLevel>().unwrap_or_else(|_| {
+        Logger::warn(format!(
+            "Unknown log level '{}', defaulting to warn.",
+            args.log_level
+        ));
+        LogLevel::Warn
+    });
     Logger::set_level(log_level);
 
     let _ = load_general_config();
@@ -129,65 +145,26 @@ fn main() {
     ));
     sleep(Duration::from_secs(args.sleep));
 
-    let mut bloons_td6_window: Option<Window> = None;
-    let mut seen_windows: Vec<String> = Vec::new();
-    {
-        let search_terms = {
-            let general_config_read_lock = GENERAL_CONFIG.read().unwrap();
-            general_config_read_lock
-                .as_ref()
-                .unwrap()
-                .window_title_search_terms
-                .clone()
-        };
-        for window in Window::all().unwrap() {
-            match window.app_name() {
-                Ok(ref name) => {
-                    // If the lowercase name contains any of GENERAL_CONFIG.window_title_search_terms, then we have found the window!
-                    if search_terms
-                        .iter()
-                        .any(|term| name.to_lowercase().contains(term))
-                    {
-                        bloons_td6_window = Some(window.clone());
-                        let fragile_window = Fragile::new(window);
-                        let mut current_window_write_lock = CURRENT_WINDOW.write().unwrap();
-                        *current_window_write_lock = Some(fragile_window);
-                        break;
-                    } else {
-                        seen_windows.push(name.to_string());
-                    }
-                }
-                Err(_) => {
-                    // If we can't get the app name, we can still get the window title, which might be helpful for debugging
-                    match window.title() {
-                        Ok(title) => {
-                            if search_terms
-                                .iter()
-                                .any(|term| title.to_lowercase().contains(term))
-                            {
-                                bloons_td6_window = Some(window.clone());
-                                let fragile_window = Fragile::new(window);
-                                let mut current_window_write_lock = CURRENT_WINDOW.write().unwrap();
-                                *current_window_write_lock = Some(fragile_window);
-                                break;
-                            } else {
-                                seen_windows.push(title.to_string());
-                            }
-                        }
-                        Err(_) => seen_windows.push("Unknown Window".to_string()),
-                    }
-                }
-            }
-        }
-    }
+    let search_terms = {
+        let general_config_read_lock = GENERAL_CONFIG.read().unwrap();
+        general_config_read_lock
+            .as_ref()
+            .unwrap()
+            .window_title_search_terms
+            .clone()
+    };
+    let (bloons_td6_window, seen_windows) = find_game_window(&search_terms);
 
     if bloons_td6_window.is_none() {
-        // If we didn't find an obvious match, print what we saw to help debugging.
         Logger::debug(format!("Available windows:\n{}", seen_windows.join("\n")));
         Logger::error("The BloonsTD6 window was not found. Common causes on Linux: running under Wayland (screenshots may not be supported), or the process/window name is different when using Proton/Wine/Steam. Try running your game in an X11 session (or under XWayland) and ensure the window is focused. For a quick workaround you can edit the source to match the actual app name/title shown in the debug output.");
         panic!("The BloonsTD6 window was not found. Common causes on Linux: running under Wayland (screenshots may not be supported), or the process/window name is different when using Proton/Wine/Steam. Try running your game in an X11 session (or under XWayland) and ensure the window is focused. For a quick workaround you can edit the source to match the actual app name/title shown in the debug output.");
     }
     let window = bloons_td6_window.as_ref().unwrap();
+    {
+        let mut current_window_write_lock = CURRENT_WINDOW.write().unwrap();
+        *current_window_write_lock = Some(Fragile::new(window.clone()));
+    }
     if window.is_minimized().unwrap_or(false) {
         panic!("The BloonsTD6.exe window is minimized. Please open the game and try again.");
     }
@@ -300,7 +277,7 @@ fn main() {
             }
         }
         None => {
-            if options.len() == 0 {
+            if options.is_empty() {
                 panic!("There are no difficulties available for the map provided.");
             } else if options.len() == 1 {
                 difficulty = Some(options[0].clone());
@@ -333,7 +310,7 @@ fn main() {
             }
         }
         None => {
-            if options.len() == 0 {
+            if options.is_empty() {
                 panic!("There are no gamemodes available for the map and difficulty provided.");
             } else if options.len() == 1 {
                 gamemode = Some(options[0].clone());

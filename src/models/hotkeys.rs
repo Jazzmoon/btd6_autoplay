@@ -1,63 +1,60 @@
 use enigo::Key;
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::ops::Index;
 
-lazy_static! {
-    static ref HOTKEY_KEYS: Vec<&'static str> = vec![
-        "start",
-        "pause",
-        "menu",
-        "sell",
-        "upgrade_top_path",
-        "upgrade_middle_path",
-        "upgrade_bottom_path",
-        "dart",
-        "boomerang",
-        "bomb",
-        "tack",
-        "ice",
-        "glue",
-        "sniper",
-        "sub",
-        "boat",
-        "ace",
-        "heli",
-        "mortar",
-        "dartling",
-        "wizard",
-        "super_monkey",
-        "ninja",
-        "alchemist",
-        "druid",
-        "mermonkey",
-        "farm",
-        "spike",
-        "village",
-        "engineer",
-        "beast",
-        "hero",
-        "target_priority_right",
-        "target_priority_left",
-        "target_priority_special",
-        "send_next_round",
-        "road_spikes",
-        "moab_mine",
-        "glue_trap",
-        "camo_trap",
-        "banana_farmer",
-        "tech_bot",
-        "energizing_totem",
-        "pontoon",
-        "portable_lake",
-        "super_monkey_storm",
-        "monkey_boost",
-        "thrive",
-        "time_stop",
-        "cash_drop",
-        "copy",
-    ];
-}
+const HOTKEY_KEYS: &[&str] = &[
+    "start",
+    "pause",
+    "menu",
+    "sell",
+    "upgrade_top_path",
+    "upgrade_middle_path",
+    "upgrade_bottom_path",
+    "dart",
+    "boomerang",
+    "bomb",
+    "tack",
+    "ice",
+    "glue",
+    "sniper",
+    "sub",
+    "boat",
+    "ace",
+    "heli",
+    "mortar",
+    "dartling",
+    "wizard",
+    "super_monkey",
+    "ninja",
+    "alchemist",
+    "druid",
+    "mermonkey",
+    "farm",
+    "spike",
+    "village",
+    "engineer",
+    "beast",
+    "hero",
+    "target_priority_right",
+    "target_priority_left",
+    "target_priority_special",
+    "send_next_round",
+    "road_spikes",
+    "moab_mine",
+    "glue_trap",
+    "camo_trap",
+    "banana_farmer",
+    "tech_bot",
+    "energizing_totem",
+    "pontoon",
+    "portable_lake",
+    "super_monkey_storm",
+    "monkey_boost",
+    "thrive",
+    "time_stop",
+    "cash_drop",
+    "copy",
+];
 
 pub fn string_to_key(key: String) -> Key {
     // Check length of key
@@ -144,9 +141,9 @@ pub fn string_to_key(key: String) -> Key {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Hotkey(Vec<String>);
 
-impl Into<Vec<Key>> for Hotkey {
-    fn into(self) -> Vec<Key> {
-        self.0
+impl From<Hotkey> for Vec<Key> {
+    fn from(hotkey: Hotkey) -> Vec<Key> {
+        hotkey.0
             .iter()
             .map(|x| string_to_key(x.to_string()))
             .collect()
@@ -161,7 +158,7 @@ impl From<Vec<String>> for Hotkey {
 
 impl From<&Vec<String>> for Hotkey {
     fn from(keys: &Vec<String>) -> Self {
-        Hotkey(keys.iter().map(|x| x.to_string()).collect())
+        Hotkey(keys.clone())
     }
 }
 
@@ -173,6 +170,12 @@ impl From<Vec<&str>> for Hotkey {
 
 impl From<&Vec<&str>> for Hotkey {
     fn from(keys: &Vec<&str>) -> Self {
+        Hotkey(keys.iter().map(|x| x.to_string()).collect())
+    }
+}
+
+impl From<&[&str]> for Hotkey {
+    fn from(keys: &[&str]) -> Self {
         Hotkey(keys.iter().map(|x| x.to_string()).collect())
     }
 }

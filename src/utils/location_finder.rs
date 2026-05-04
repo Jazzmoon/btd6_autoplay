@@ -151,5 +151,9 @@ pub fn location_finder(window_x: i32, window_y: i32) {
     });
 
     Logger::notice("Starting coordinate finder in Single Point mode...");
-    loop {}
+    // Park the main thread indefinitely; the key/mouse callbacks drive all activity.
+    // Using thread::park() avoids a busy spin that wastes CPU cycles.
+    loop {
+        std::thread::park();
+    }
 }

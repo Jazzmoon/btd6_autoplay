@@ -27,7 +27,7 @@ pub fn map_config_name_to_map_name(map_config_name: &str) -> String {
 
 pub fn load_general_config() -> GeneralConfig {
     let general_config_path: PathBuf = CONFIG_BASE_PATH.join("General.yaml");
-    if general_config_path.exists() == false {
+    if !general_config_path.exists() {
         panic!("The config/General.yaml file does not exist. Please create it and add the necessary configuration.");
     }
     Logger::info(format!(
@@ -48,7 +48,7 @@ pub fn load_general_config() -> GeneralConfig {
 
 pub fn load_hotkeys() -> Hotkeys {
     let hotkeys_path: PathBuf = CONFIG_BASE_PATH.join("Hotkeys.yaml");
-    if hotkeys_path.exists() == false {
+    if !hotkeys_path.exists() {
         panic!("The config/Hotkeys.yaml file does not exist. Please create it and add the necessary hotkeys.");
     }
     Logger::info(format!("Loading hotkeys from {:?}", hotkeys_path));
