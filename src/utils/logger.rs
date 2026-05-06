@@ -130,6 +130,9 @@ impl Logger {
         Self::log(LogLevel::Emerg, message);
     }
 
+    /// Log a message unconditionally, bypassing the configured log level.
+    /// Use this only for output that must always be visible, such as
+    /// interactive utility messages (e.g. the location finder).
     pub fn force(level: LogLevel, message: impl AsRef<str>) {
         Self::log_inner(level, message);
     }
@@ -141,6 +144,8 @@ impl Logger {
         Self::log_inner(level, message);
     }
 
+    /// Internal implementation that formats and prints a log line without
+    /// checking whether the given level is currently enabled.
     fn log_inner(level: LogLevel, message: impl AsRef<str>) {
         let elapsed = START_TIME.elapsed();
         let total_millis = elapsed.as_millis() as u64;
