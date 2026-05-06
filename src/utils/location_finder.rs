@@ -9,7 +9,7 @@ use std::time::Duration;
 use crate::models::coords::CoordsArea;
 
 use super::global::ENIGO_SETTINGS;
-use super::logger::Logger;
+use super::logger::{LogLevel, Logger};
 
 #[derive(Debug, Clone, Copy)]
 pub enum LocationFinderMode {
@@ -24,10 +24,10 @@ pub fn location_finder(window_x: i32, window_y: i32) {
     // Pressing 'p' again will resume the program
     // Pressing 'm' changes the mode from single click to area selection
     // Print help dialog for the functionality of the program
-    Logger::notice("Welcome to the location finder utility!");
-    Logger::info("Press 'q' to exit the program");
-    Logger::info("Press 'p' to pause/resume the program");
-    Logger::info("Press 'm' to change the mode from single point to area selection mode\n");
+    Logger::force(LogLevel::Notice, "Welcome to the location finder utility!");
+    Logger::force(LogLevel::Info, "Press 'q' to exit the program");
+    Logger::force(LogLevel::Info, "Press 'p' to pause/resume the program");
+    Logger::force(LogLevel::Info, "Press 'm' to change the mode from single point to area selection mode\n");
 
     let paused = Arc::new(AtomicBool::new(false));
     let mode = Arc::new(Mutex::new(LocationFinderMode::SinglePoint));
@@ -39,15 +39,15 @@ pub fn location_finder(window_x: i32, window_y: i32) {
 
     let _guard = device_events.on_key_up(move |key| {
         if key.eq(&Keycode::Q) {
-            Logger::notice("Exiting program");
+            Logger::force(LogLevel::Notice, "Exiting program");
             std::process::exit(0);
         } else if key.eq(&Keycode::P) {
             let paused = paused_clone.load(Ordering::SeqCst);
             paused_clone.store(!paused, Ordering::SeqCst);
             if !paused {
-                Logger::notice("Program paused");
+                Logger::force(LogLevel::Notice, "Program paused");
             } else {
-                Logger::notice("Program resumed");
+                Logger::force(LogLevel::Notice, "Program resumed");
             }
         } else if key.eq(&Keycode::M) {
             let paused = paused_clone.load(Ordering::SeqCst);
@@ -57,7 +57,7 @@ pub fn location_finder(window_x: i32, window_y: i32) {
                     LocationFinderMode::SinglePoint => LocationFinderMode::AreaSelection,
                     LocationFinderMode::AreaSelection => LocationFinderMode::SinglePoint,
                 };
-                Logger::notice(format!("Mode changed to {:?}", *mode_lock));
+                Logger::force(LogLevel::Notice, format!("Mode changed to {:?}", *mode_lock));
             }
         }
     });
@@ -91,7 +91,7 @@ pub fn location_finder(window_x: i32, window_y: i32) {
             LocationFinderMode::SinglePoint => {
                 // Print two messages: Absolute coordinates and relative coordinates to window x and y
                 let coords_s = (coords.0 - window_x, coords.1 - window_y);
-                Logger::info(format!("Relative to Game Window: {:?}", coords_s));
+                Logger::force(LogLevel::Info, format!("Relative to Game Window: {:?}", coords_s));
             }
             LocationFinderMode::AreaSelection => {
                 let mut area_mode_first_coordinate =
@@ -139,7 +139,7 @@ pub fn location_finder(window_x: i32, window_y: i32) {
                         }
 
                         let coords_area = CoordsArea { x, y, w, h };
-                        Logger::info(format!("{:?}", coords_area));
+                        Logger::force(LogLevel::Info, format!("{:?}", coords_area));
                         *area_mode_first_coordinate = None;
                     }
                     None => {
@@ -150,7 +150,7 @@ pub fn location_finder(window_x: i32, window_y: i32) {
         }
     });
 
-    Logger::notice("Starting coordinate finder in Single Point mode...");
+    Logger::force(LogLevel::Notice, "Starting coordinate finder in Single Point mode...");
     // Park the main thread indefinitely; the key/mouse callbacks drive all activity.
     // Using thread::park() avoids a busy spin that wastes CPU cycles.
     loop {
