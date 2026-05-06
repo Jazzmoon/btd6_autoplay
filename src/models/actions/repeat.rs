@@ -56,7 +56,10 @@ impl ActionTrait for Repeat {
                     }
                 });
 
-                REPEAT_POOL.lock().unwrap().push(handle);
+                REPEAT_POOL
+                    .lock()
+                    .expect("REPEAT_POOL mutex poisoned")
+                    .push(handle);
             }
         }
         Ok(())

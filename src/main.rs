@@ -124,7 +124,11 @@ fn find_game_window(search_terms: &[String]) -> (Option<Window>, Vec<String>) {
 fn stop_repeat_pool() {
     use std::sync::atomic::Ordering;
     GAME_ACTIVE.store(false, Ordering::SeqCst);
-    let handles: Vec<_> = REPEAT_POOL.lock().unwrap().drain(..).collect();
+    let handles: Vec<_> = REPEAT_POOL
+        .lock()
+        .expect("REPEAT_POOL mutex poisoned")
+        .drain(..)
+        .collect();
     for handle in handles {
         if let Err(e) = handle.join() {
             Logger::error(format!("Repeat thread panicked during join: {:?}", e));
