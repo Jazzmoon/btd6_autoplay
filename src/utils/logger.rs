@@ -18,21 +18,25 @@ pub enum LogLevel {
     Debug = 7,
 }
 
-impl LogLevel {
-    pub fn from_str(input: &str) -> Option<Self> {
+impl std::str::FromStr for LogLevel {
+    type Err = String;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.trim().to_lowercase().as_str() {
-            "emerg" | "emergency" => Some(Self::Emerg),
-            "alert" => Some(Self::Alert),
-            "crit" | "critical" => Some(Self::Crit),
-            "error" | "err" => Some(Self::Error),
-            "warn" | "warning" => Some(Self::Warn),
-            "notice" => Some(Self::Notice),
-            "info" => Some(Self::Info),
-            "debug" => Some(Self::Debug),
-            _ => None,
+            "emerg" | "emergency" => Ok(Self::Emerg),
+            "alert" => Ok(Self::Alert),
+            "crit" | "critical" => Ok(Self::Crit),
+            "error" | "err" => Ok(Self::Error),
+            "warn" | "warning" => Ok(Self::Warn),
+            "notice" => Ok(Self::Notice),
+            "info" => Ok(Self::Info),
+            "debug" => Ok(Self::Debug),
+            _ => Err(format!("Unknown log level: '{}'", input)),
         }
     }
+}
 
+impl LogLevel {
     fn from_u8(value: u8) -> Option<Self> {
         match value {
             0 => Some(Self::Emerg),

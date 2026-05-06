@@ -6,6 +6,7 @@ use crate::utils::{
 
 use enigo::InputResult;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Tower {
@@ -13,6 +14,16 @@ pub struct Tower {
     pub hotkey: Hotkey,
     pub coords: Coords,
     pub upgrade_path: [i32; 3],
+}
+
+impl fmt::Display for Tower {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Tower: {}, Hotkey: {:?}, Coords: {:?}, Path: {:?}",
+            self.name, self.hotkey, self.coords, self.upgrade_path
+        )
+    }
 }
 
 impl Tower {
@@ -25,16 +36,8 @@ impl Tower {
         }
     }
 
-    pub fn to_string(&self) -> String {
-        format!(
-            "Tower: {}, Hotkey: {:?}, Coords: {:?}, Path: {:?}",
-            self.name, self.hotkey, self.coords, self.upgrade_path
-        )
-    }
-
-    pub fn highlight(&self, perform_click: Option<bool>) -> InputResult<()> {
-        let click = perform_click.unwrap_or(false);
-        if click {
+    pub fn highlight(&self, perform_click: bool) -> InputResult<()> {
+        if perform_click {
             interaction::click(self.coords.clone(), None)
         } else {
             interaction::move_cursor(self.coords.clone(), None)
@@ -82,17 +85,14 @@ impl Tower {
 
         // Check to make sure the upgrade path is valid (we cannot downgrade a tower)
         if !diff.iter().all(|&x| x >= 0) {
-            // If the upgrade path is invalid, print an error message
             return Err(format!(
                 "Invalid upgrade path: {:?} for tower: {:?}",
                 upgrade_path, self.name
             ));
         }
-        // Finally, update the tower's upgrade path by Selecting it, and pressing the upgrade hotkeys in order
-        let res = self.highlight(Some(true));
-        if res.is_err() {
-            return Err(format!("Failed to select tower: {:?}", self.name));
-        }
+        // Finally, update the tower's upgrade path by selecting it, and pressing the upgrade hotkeys in order
+        self.highlight(true)
+            .map_err(|_| format!("Failed to select tower: {:?}", self.name))?;
 
         {
             let hotkeys_read_lock = HOTKEYS.read().unwrap();
@@ -124,10 +124,7 @@ impl Tower {
     }
 
     pub fn sell(&self) -> InputResult<()> {
-        let res = self.highlight(Some(true));
-        if res.is_err() {
-            return res;
-        }
+        self.highlight(true)?;
         let hotkeys_read_lock = HOTKEYS.read().unwrap();
         let hotkeys = hotkeys_read_lock.as_ref().unwrap();
         let _ = interaction::press_key(hotkeys.sell.clone(), None);

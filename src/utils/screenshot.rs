@@ -146,7 +146,7 @@ pub fn capture_area(
         ));
     }
 
-    return dyn_image;
+    dyn_image
 }
 
 pub fn convert_to_rusty_image(img: DynamicImage) -> Image {
