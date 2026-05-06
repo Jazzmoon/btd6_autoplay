@@ -37,10 +37,15 @@ impl ActionTrait for Repeat {
                 // Infinite repeat: spawn a background thread so the caller is not blocked.
                 //
                 // If a previous infinite-repeat thread is still alive (e.g. this action was
-                // triggered twice in the same game), stop and join it first.
+                // triggered twice in the same game), signal it to stop and join it before
+                // spawning a new one. GAME_ACTIVE is set to false here and reset to true only
+                // after the old thread has fully exited, so there is no window in which both
+                // the old and new threads could observe different values of the flag.
                 if let Some(old_handle) = REPEAT_THREAD.lock().unwrap().take() {
                     GAME_ACTIVE.store(false, Ordering::SeqCst);
-                    let _ = old_handle.join();
+                    if let Err(e) = old_handle.join() {
+                        Logger::error(format!("Repeat thread panicked: {:?}", e));
+                    }
                 }
 
                 // Arm the stop token for the new iteration.
@@ -55,7 +60,8 @@ impl ActionTrait for Repeat {
                         if let Err(e) = action.run() {
                             Logger::error(format!("Repeat thread action error: {:?}", e));
                         }
-                        // Re-check before sleeping so we exit as soon as the flag drops.
+                        // Skip the sleep if the stop token was cleared while the action was
+                        // running, so the thread exits without waiting a full interval.
                         if stop_flag.load(Ordering::SeqCst) {
                             thread::sleep(interval);
                         }

@@ -122,9 +122,10 @@ fn find_game_window(search_terms: &[String]) -> (Option<Window>, Vec<String>) {
 fn stop_repeat_thread() {
     use std::sync::atomic::Ordering;
     GAME_ACTIVE.store(false, Ordering::SeqCst);
-    let handle = REPEAT_THREAD.lock().unwrap().take();
-    if let Some(handle) = handle {
-        let _ = handle.join();
+    if let Some(handle) = REPEAT_THREAD.lock().unwrap().take() {
+        if let Err(e) = handle.join() {
+            Logger::error(format!("Repeat thread panicked during join: {:?}", e));
+        }
     }
 }
 
