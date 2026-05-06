@@ -15,7 +15,7 @@ use btd6_autoplay::{
     utils::{
         global::{
             CONFIG_SCREEN_PATH, CURRENT_MAP, CURRENT_WINDOW, ENIGO_SETTINGS, GAME_ACTIVE,
-            GENERAL_CONFIG, HOTKEYS, MAP_CONFIG, REPEAT_THREAD,
+            GENERAL_CONFIG, HOTKEYS, MAP_CONFIG, REPEAT_POOL,
         },
         interaction,
         location_finder::location_finder,
@@ -115,14 +115,17 @@ fn find_game_window(search_terms: &[String]) -> (Option<Window>, Vec<String>) {
     (found, seen)
 }
 
-/// Signal the infinite-repeat background thread (if any) to stop and wait for it to finish.
+/// Signal all background repeat threads to stop and wait for every one to finish.
 ///
-/// This should be called at every game-end point (victory, defeat, or early restart) so that
-/// the thread is cleanly joined before the next game begins.
-fn stop_repeat_thread() {
+/// Sets `GAME_ACTIVE` to `false` (the shared stop token), then drains `REPEAT_POOL` and joins
+/// each handle. This should be called at every game-end point (victory, defeat, or early
+/// restart) so the pool is empty and ready for the next game, which will set `GAME_ACTIVE`
+/// back to `true` before spawning new threads.
+fn stop_repeat_pool() {
     use std::sync::atomic::Ordering;
     GAME_ACTIVE.store(false, Ordering::SeqCst);
-    if let Some(handle) = REPEAT_THREAD.lock().unwrap().take() {
+    let handles: Vec<_> = REPEAT_POOL.lock().unwrap().drain(..).collect();
+    for handle in handles {
         if let Err(e) = handle.join() {
             Logger::error(format!("Repeat thread panicked during join: {:?}", e));
         }
@@ -435,6 +438,11 @@ fn main() {
     let (mut game_wins, mut game_losses) = (0, 0);
 
     while args.number == -1 || game_wins + game_losses < args.number {
+        // Re-arm the stop token at the top of every loop iteration. During a normal game it is
+        // already `true` (no-op). After a game ends and `stop_repeat_pool` clears it, the next
+        // iteration re-arms it so new `repeat` threads spawned in the next game work correctly.
+        GAME_ACTIVE.store(true, std::sync::atomic::Ordering::SeqCst);
+
         // Get screenshot of the game window
         let screenshot = capture_screenshot();
 
@@ -562,7 +570,7 @@ fn main() {
                         match on_win_action {
                             OnWinAction::Restart => {
                                 game_wins += 1;
-                                stop_repeat_thread();
+                                stop_repeat_pool();
                                 restart_game(&settings);
                                 last_seen_round = 0;
                                 round_unchanged_count = 0;
@@ -572,7 +580,7 @@ fn main() {
                                     "EndGame action - exiting after {} win(s) and {} loss(es).",
                                     game_wins, game_losses
                                 ));
-                                stop_repeat_thread();
+                                stop_repeat_pool();
                                 return;
                             }
                             OnWinAction::Continue => {
@@ -701,7 +709,7 @@ fn main() {
                 match on_win_action {
                     OnWinAction::Restart => {
                         Logger::notice("Restarting game...");
-                        stop_repeat_thread();
+                        stop_repeat_pool();
                         restart_game(&settings);
                         last_seen_round = 0;
                     }
@@ -710,7 +718,7 @@ fn main() {
                             "EndGame action - exiting after {} win(s) and {} loss(es).",
                             game_wins, game_losses
                         ));
-                        stop_repeat_thread();
+                        stop_repeat_pool();
                         return;
                     }
                     OnWinAction::Continue => {

@@ -172,6 +172,13 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
                 return Err("Repeat action requires an action to repeat.".into());
             }
             let inner_action_str = action_array[action_start..].join(" ");
+            if inner_action_str.starts_with("sleep") {
+                return Err(
+                    "The 'sleep' action is not allowed as the inner action of 'repeat'. \
+                     Use the repeat interval parameter to control timing instead."
+                        .into(),
+                );
+            }
             let inner_action = parse_action(&inner_action_str)?;
 
             Ok(Box::new(actions::repeat::Repeat {

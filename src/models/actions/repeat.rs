@@ -8,7 +8,7 @@ use std::{
 use crate::{
     models::action_parser::ActionTrait,
     utils::{
-        global::{GAME_ACTIVE, REPEAT_THREAD},
+        global::{GAME_ACTIVE, REPEAT_POOL},
         logger::Logger,
     },
 };
@@ -34,23 +34,11 @@ impl ActionTrait for Repeat {
                 }
             }
             None => {
-                // Infinite repeat: spawn a background thread so the caller is not blocked.
-                //
-                // If a previous infinite-repeat thread is still alive (e.g. this action was
-                // triggered twice in the same game), signal it to stop and join it before
-                // spawning a new one. GAME_ACTIVE is set to false here and reset to true only
-                // after the old thread has fully exited, so there is no window in which both
-                // the old and new threads could observe different values of the flag.
-                if let Some(old_handle) = REPEAT_THREAD.lock().unwrap().take() {
-                    GAME_ACTIVE.store(false, Ordering::SeqCst);
-                    if let Err(e) = old_handle.join() {
-                        Logger::error(format!("Repeat thread panicked: {:?}", e));
-                    }
-                }
-
-                // Arm the stop token for the new iteration.
-                GAME_ACTIVE.store(true, Ordering::SeqCst);
-
+                // Infinite repeat: spawn an independent background thread so the caller is not
+                // blocked. Multiple `repeat` actions may each call this path; each gets its own
+                // thread with its own interval timer, all sharing the same `GAME_ACTIVE` stop
+                // token. When the game ends, `stop_repeat_pool` sets the token to `false` and
+                // joins every handle in `REPEAT_POOL`.
                 let action = Arc::clone(&self.action);
                 let interval = self.interval;
                 let stop_flag = Arc::clone(&GAME_ACTIVE);
@@ -68,7 +56,7 @@ impl ActionTrait for Repeat {
                     }
                 });
 
-                *REPEAT_THREAD.lock().unwrap() = Some(handle);
+                REPEAT_POOL.lock().unwrap().push(handle);
             }
         }
         Ok(())
