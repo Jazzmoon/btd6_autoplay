@@ -130,11 +130,18 @@ impl Logger {
         Self::log(LogLevel::Emerg, message);
     }
 
+    pub fn force(level: LogLevel, message: impl AsRef<str>) {
+        Self::log_inner(level, message);
+    }
+
     fn log(level: LogLevel, message: impl AsRef<str>) {
         if !Self::is_enabled(level) {
             return;
         }
+        Self::log_inner(level, message);
+    }
 
+    fn log_inner(level: LogLevel, message: impl AsRef<str>) {
         let elapsed = START_TIME.elapsed();
         let total_millis = elapsed.as_millis() as u64;
         let hours = total_millis / 3_600_000;
