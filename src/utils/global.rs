@@ -1,5 +1,6 @@
 use std::path::PathBuf;
-use std::sync::{atomic::AtomicU8, Arc, RwLock};
+use std::sync::{atomic::AtomicBool, atomic::AtomicU8, Arc, Mutex, RwLock};
+use std::thread::JoinHandle;
 
 use enigo::Settings as EnigoSettings;
 use fragile::Fragile;
@@ -32,4 +33,11 @@ lazy_static! {
     pub static ref MAP_CONFIG: Arc<RwLock<Option<MapConfig>>> = Arc::new(RwLock::new(None));
     pub static ref CURRENT_MAP: Arc<RwLock<Option<Map>>> = Arc::new(RwLock::new(None));
     pub static ref LOG_LEVEL: AtomicU8 = AtomicU8::new(DEFAULT_LOG_LEVEL);
+    /// Shared stop token for all background repeat threads. Set to `true` at the start of each
+    /// game and to `false` at game-end so every thread in `REPEAT_POOL` exits cleanly.
+    pub static ref GAME_ACTIVE: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+    /// Thread-pool for background threads spawned by infinite `repeat` actions. Each action
+    /// spawns its own thread with its own timer and count, all sharing the `GAME_ACTIVE` stop
+    /// token. At game-end, every handle in the pool is joined and the pool is cleared.
+    pub static ref REPEAT_POOL: Mutex<Vec<JoinHandle<()>>> = Mutex::new(Vec::new());
 }
