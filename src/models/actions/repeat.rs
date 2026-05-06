@@ -11,15 +11,12 @@ pub struct Repeat {
 impl ActionTrait for Repeat {
     fn run(&self) -> Result<(), Box<dyn StdError>> {
         let mut i = 0u64;
-        loop {
+        while self.count.map_or(true, |count| i < count) {
             self.action.run()?;
             i += 1;
-            if let Some(count) = self.count {
-                if i >= count {
-                    break;
-                }
+            if self.count.map_or(true, |count| i < count) {
+                sleep(self.interval);
             }
-            sleep(self.interval);
         }
         Ok(())
     }
