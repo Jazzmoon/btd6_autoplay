@@ -188,6 +188,50 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
                 fast_forward: Some(action_array.len() == 2 && action_array[1] == "fast-forward"),
             }));
         }
+        "repeat" => {
+            if action_array.len() < 3 {
+                return Err("Repeat action requires at least an interval and an action.".into());
+            }
+            // Parse the interval using the same format as sleep
+            let time_re = regex::Regex::new(r"^(\d+)(ms|s|m|h|d)?$").unwrap();
+            if !time_re.is_match(action_array[1]) {
+                return Err("Invalid repeat interval format.".into());
+            }
+            let re_match = time_re.captures(action_array[1]).unwrap();
+            let interval_value = re_match
+                .get(1)
+                .and_then(|s| s.as_str().parse::<u64>().ok())
+                .ok_or("Invalid repeat interval format.")?;
+            let interval_units = re_match.get(2).map(|s| s.as_str());
+            let interval = match interval_units {
+                None | Some("ms") => Duration::from_millis(interval_value),
+                Some("s") => Duration::from_secs(interval_value),
+                Some("m") => Duration::from_secs(interval_value * 60),
+                Some("h") => Duration::from_secs(interval_value * 60 * 60),
+                Some("d") => Duration::from_secs(interval_value * 60 * 60 * 24),
+                _ => return Err("Invalid repeat interval units.".into()),
+            };
+
+            // Check if the next token is a plain integer (optional repeat count)
+            let (count, action_start) =
+                if let Ok(n) = action_array[2].parse::<u64>() {
+                    (Some(n), 3)
+                } else {
+                    (None, 2)
+                };
+
+            if action_array.len() <= action_start {
+                return Err("Repeat action requires an action to repeat.".into());
+            }
+            let inner_action_str = action_array[action_start..].join(" ");
+            let inner_action = parse_action(&inner_action_str)?;
+
+            return Ok(Box::new(actions::repeat::Repeat {
+                interval,
+                action: inner_action,
+                count,
+            }));
+        }
         "upgrade" => {
             let args = action_array[1..].to_vec();
             let tower_name = args[0];
