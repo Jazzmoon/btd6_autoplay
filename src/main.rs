@@ -14,8 +14,8 @@ use btd6_autoplay::{
     },
     utils::{
         global::{
-            CONFIG_SCREEN_PATH, CURRENT_MAP, CURRENT_WINDOW, ENIGO_SETTINGS, GENERAL_CONFIG,
-            HOTKEYS, MAP_CONFIG,
+            CONFIG_SCREEN_PATH, CURRENT_MAP, CURRENT_WINDOW, ENIGO_SETTINGS, GAME_ACTIVE,
+            GENERAL_CONFIG, HOTKEYS, MAP_CONFIG, REPEAT_THREAD,
         },
         interaction,
         location_finder::location_finder,
@@ -113,6 +113,19 @@ fn find_game_window(search_terms: &[String]) -> (Option<Window>, Vec<String>) {
         }
     }
     (found, seen)
+}
+
+/// Signal the infinite-repeat background thread (if any) to stop and wait for it to finish.
+///
+/// This should be called at every game-end point (victory, defeat, or early restart) so that
+/// the thread is cleanly joined before the next game begins.
+fn stop_repeat_thread() {
+    use std::sync::atomic::Ordering;
+    GAME_ACTIVE.store(false, Ordering::SeqCst);
+    let handle = REPEAT_THREAD.lock().unwrap().take();
+    if let Some(handle) = handle {
+        let _ = handle.join();
+    }
 }
 
 fn main() {
@@ -548,6 +561,7 @@ fn main() {
                         match on_win_action {
                             OnWinAction::Restart => {
                                 game_wins += 1;
+                                stop_repeat_thread();
                                 restart_game(&settings);
                                 last_seen_round = 0;
                                 round_unchanged_count = 0;
@@ -557,6 +571,7 @@ fn main() {
                                     "EndGame action - exiting after {} win(s) and {} loss(es).",
                                     game_wins, game_losses
                                 ));
+                                stop_repeat_thread();
                                 return;
                             }
                             OnWinAction::Continue => {
@@ -685,6 +700,7 @@ fn main() {
                 match on_win_action {
                     OnWinAction::Restart => {
                         Logger::notice("Restarting game...");
+                        stop_repeat_thread();
                         restart_game(&settings);
                         last_seen_round = 0;
                     }
@@ -693,6 +709,7 @@ fn main() {
                             "EndGame action - exiting after {} win(s) and {} loss(es).",
                             game_wins, game_losses
                         ));
+                        stop_repeat_thread();
                         return;
                     }
                     OnWinAction::Continue => {
