@@ -11,11 +11,10 @@ impl ActionTrait for Select {
         let current_map_read_lock = CURRENT_MAP.read().unwrap();
         let current_map = current_map_read_lock.as_ref().unwrap();
 
-        if !current_map.towers.contains_key(&self.tower) {
-            return Err("Tower does not exist.".into());
-        }
-
-        let tower = current_map.towers.get(&self.tower).unwrap();
+        let tower = current_map
+            .towers
+            .get(&self.tower)
+            .ok_or("Tower does not exist.")?;
         tower.highlight(true).map_err(Into::into)
     }
 }
