@@ -530,23 +530,42 @@ fn main() {
 
         if let Some((current_round, total_rounds)) = parsed_round {
             // Guard against massive round jumps caused by Tesseract misreads
-            // (e.g. "7/100" → "71/100", giving current_round = 71 when it
-            // should be 7).  When the jump exceeds LARGE_JUMP_THRESHOLD we
-            // require a second consecutive read in the same territory before
-            // treating the change as real.
+            // (e.g. "14/100" → "114/100", giving current_round = 114 when it
+            // should be 14).  When the jump exceeds LARGE_JUMP_THRESHOLD we
+            // store the pending value and wait for the *next* read.  The large
+            // jump is confirmed only if the following read equals pending + 1
+            // (the expected next sequential round).  If the following read does
+            // not equal pending + 1 the pending value is discarded as a
+            // misread and we resume from last_seen_round.
             let jump = current_round - last_seen_round;
             let is_large_jump = last_seen_round > 0 && jump > LARGE_JUMP_THRESHOLD;
 
             let accepted_round: Option<i32> = if is_large_jump {
-                if pending_large_jump.is_some() {
-                    // A large jump was already pending from the previous
-                    // iteration; this second read confirms it.
-                    Logger::notice(format!(
-                        "Large round jump confirmed: {} -> {} (jump of {})",
-                        last_seen_round, current_round, jump
-                    ));
-                    pending_large_jump = None;
-                    Some(current_round)
+                if let Some(pending) = pending_large_jump {
+                    if current_round == pending + 1 {
+                        // The round following the pending large jump is exactly
+                        // pending + 1, confirming the jump was real.
+                        Logger::notice(format!(
+                            "Large round jump confirmed: {} -> {} (jump of {}), next round {}",
+                            last_seen_round, pending, pending - last_seen_round, current_round
+                        ));
+                        pending_large_jump = None;
+                        Some(current_round)
+                    } else {
+                        // The pending large jump was not followed by its
+                        // expected next round – it was a misread.  Discard it
+                        // and treat this new value as a fresh pending candidate.
+                        Logger::warn(format!(
+                            "Large round jump to {} was a misread (expected {}, got {}). \
+                             Resuming from {}. New large jump detected, awaiting confirmation.",
+                            pending,
+                            pending + 1,
+                            current_round,
+                            last_seen_round
+                        ));
+                        pending_large_jump = Some(current_round);
+                        None
+                    }
                 } else {
                     // First time seeing this large jump – hold for one round.
                     Logger::warn(format!(
@@ -557,7 +576,14 @@ fn main() {
                     None
                 }
             } else {
-                // Normal (small) increment – clear any stale pending value.
+                // Normal (small) increment.  If a large jump was pending,
+                // the expected next round did not follow – it was a misread.
+                if let Some(pending) = pending_large_jump {
+                    Logger::warn(format!(
+                        "Large round jump to {} was a misread. Resuming from {}.",
+                        pending, last_seen_round
+                    ));
+                }
                 pending_large_jump = None;
                 Some(current_round)
             };
