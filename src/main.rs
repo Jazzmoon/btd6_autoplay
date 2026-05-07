@@ -502,12 +502,15 @@ fn main() {
             }
         } else if let Ok(cr) = output.trim().parse::<i32>() {
             // No slash: Tesseract may have merged the slash with a digit
-            // (e.g. "7/100" → "71000").  Discard the reading whenever we
-            // already know the total-rounds value and the parsed number is
-            // below it, since that situation is only reachable via a misread.
-            if last_known_total > 0 && cr < last_known_total {
+            // (e.g. "7/100" → "71000").  During a normal game (before we've
+            // entered freeplay) every valid counter read should include a
+            // slash, so we discard any slash-less value while last_seen_round
+            // is still within the normal range.  Once we are in freeplay
+            // (last_seen_round >= last_known_total) the display may no longer
+            // show a denominator, so we accept those reads instead.
+            if last_known_total > 0 && last_seen_round < last_known_total {
                 Logger::debug(format!(
-                    "Discarding no-slash round '{}': below known max of {}",
+                    "Discarding no-slash round '{}': still in normal game (max={})",
                     cr, last_known_total
                 ));
                 None
@@ -640,6 +643,7 @@ fn main() {
                                     last_seen_round = 0;
                                     round_unchanged_count = 0;
                                     pending_large_jump = None;
+                                    last_known_total = -1;
                                 }
                                 OnWinAction::EndGame => {
                                     Logger::notice(format!(
@@ -783,6 +787,7 @@ fn main() {
                         restart_game(&settings);
                         last_seen_round = 0;
                         pending_large_jump = None;
+                        last_known_total = -1;
                     }
                     OnWinAction::EndGame => {
                         Logger::notice(format!(
