@@ -440,6 +440,14 @@ fn main() {
     let mut last_seen_round = 0;
     let mut round_unchanged_count: u32 = 0;
     let (mut game_wins, mut game_losses) = (0, 0);
+    // Track the most-recent total-rounds value (e.g. 100 in "7/100") so we
+    // can discard no-slash reads that fall below it (likely Tesseract merging
+    // digits and the slash, e.g. "71000" instead of "7/100").
+    let mut last_known_total: i32 = -1;
+    // When a round jumps by more than LARGE_JUMP_THRESHOLD we hold the value
+    // here and require a second consecutive matching read before accepting it.
+    let mut pending_large_jump: Option<i32> = None;
+    const LARGE_JUMP_THRESHOLD: i32 = 10;
 
     while args.number == -1 || game_wins + game_losses < args.number {
         // Re-arm the stop token at the top of every loop iteration. During a normal game it is
@@ -493,114 +501,172 @@ fn main() {
                 _ => None,
             }
         } else if let Ok(cr) = output.trim().parse::<i32>() {
-            Some((cr, -1))
+            // No slash: Tesseract may have merged the slash with a digit
+            // (e.g. "7/100" → "71000").  Discard the reading whenever we
+            // already know the total-rounds value and the parsed number is
+            // below it, since that situation is only reachable via a misread.
+            if last_known_total > 0 && cr < last_known_total {
+                Logger::debug(format!(
+                    "Discarding no-slash round '{}': below known max of {}",
+                    cr, last_known_total
+                ));
+                None
+            } else {
+                Some((cr, -1))
+            }
         } else {
             None
         };
 
+        // Keep last_known_total up to date whenever we receive a valid total.
+        if let Some((_, tot)) = parsed_round {
+            if tot > 0 {
+                last_known_total = tot;
+            }
+        }
+
         if let Some((current_round, total_rounds)) = parsed_round {
-            if current_round != last_seen_round {
-                round_unchanged_count = 0;
-                let previous_round = last_seen_round;
-                last_seen_round = current_round;
+            // Guard against massive round jumps caused by Tesseract misreads
+            // (e.g. "7/100" → "71/100", giving current_round = 71 when it
+            // should be 7).  When the jump exceeds LARGE_JUMP_THRESHOLD we
+            // require a second consecutive read in the same territory before
+            // treating the change as real.
+            let jump = current_round - last_seen_round;
+            let is_large_jump = last_seen_round > 0 && jump > LARGE_JUMP_THRESHOLD;
 
-                if total_rounds == -1 {
-                    Logger::info(format!("The current round is: {}", current_round));
+            let accepted_round: Option<i32> = if is_large_jump {
+                if pending_large_jump.is_some() {
+                    // A large jump was already pending from the previous
+                    // iteration; this second read confirms it.
+                    Logger::notice(format!(
+                        "Large round jump confirmed: {} -> {} (jump of {})",
+                        last_seen_round, current_round, jump
+                    ));
+                    pending_large_jump = None;
+                    Some(current_round)
                 } else {
-                    Logger::info(format!(
-                        "The current round is: {}/{}",
-                        current_round, total_rounds
+                    // First time seeing this large jump – hold for one round.
+                    Logger::warn(format!(
+                        "Large round jump detected: {} -> {} (jump of {}). Awaiting confirmation.",
+                        last_seen_round, current_round, jump
                     ));
+                    pending_large_jump = Some(current_round);
+                    None
                 }
+            } else {
+                // Normal (small) increment – clear any stale pending value.
+                pending_large_jump = None;
+                Some(current_round)
+            };
 
-                // Extract everything we need from CURRENT_MAP in a single read-lock scope,
-                // before executing actions (which may themselves acquire a write lock).
-                let (restart_on_round, on_win_action, round_actions) = {
-                    let current_map_read_lock = CURRENT_MAP.read().unwrap();
-                    let current_map = current_map_read_lock.as_ref().unwrap();
-                    // Get all missed instructions in range (last_seen_round + 1, current_round)
-                    let actions = current_map
-                        .instructions
-                        .iter()
-                        .filter(|&(round, _)| *round > previous_round && *round <= current_round)
-                        .flat_map(|(_, actions)| actions.iter())
-                        .cloned()
-                        .collect::<Vec<_>>();
-                    Logger::debug(format!(
-                        "Executing {} actions for rounds {} to {}...",
-                        actions.len(),
-                        previous_round + 1,
-                        current_round
-                    ));
-                    (
-                        current_map.restart_on_round,
-                        current_map.on_win_action.clone(),
-                        actions,
-                    )
-                };
+            if let Some(current_round) = accepted_round {
+                if current_round != last_seen_round {
+                    round_unchanged_count = 0;
+                    let previous_round = last_seen_round;
+                    last_seen_round = current_round;
 
-                if round_actions.is_empty() {
-                    Logger::debug(format!(
-                        "No actions found for rounds {}-{}",
-                        previous_round + 1,
-                        current_round
-                    ));
-                }
-
-                for action_str in &round_actions {
-                    Logger::info(format!("Executing action: {}", action_str));
-                    match action_parser::parse_action(action_str) {
-                        Ok(action) => match action.run() {
-                            Ok(_) => {
-                                Logger::info(format!("Successfully ran action: {:?}", action_str))
-                            }
-                            Err(e) => Logger::error(format!("Failed to run action: {:?}", e)),
-                        },
-                        Err(e) => Logger::error(format!(
-                            "Action Parser failed to parse an action: {:?}",
-                            e
-                        )),
-                    }
-                }
-
-                // If this round matches restart_on_round, trigger the restart sequence now
-                // (all towers have been placed; let the configured action decide what happens next)
-                if let Some(target_round) = restart_on_round {
-                    if current_round == target_round {
-                        Logger::notice(format!(
-                            "Reached restart_on_round ({}), triggering restart.",
-                            target_round
+                    if total_rounds == -1 {
+                        Logger::info(format!("The current round is: {}", current_round));
+                    } else {
+                        Logger::info(format!(
+                            "The current round is: {}/{}",
+                            current_round, total_rounds
                         ));
-                        match on_win_action {
-                            OnWinAction::Restart => {
-                                game_wins += 1;
-                                stop_repeat_pool();
-                                restart_game(&settings);
-                                last_seen_round = 0;
-                                round_unchanged_count = 0;
-                            }
-                            OnWinAction::EndGame => {
-                                Logger::notice(format!(
-                                    "EndGame action - exiting after {} win(s) and {} loss(es).",
-                                    game_wins, game_losses
-                                ));
-                                stop_repeat_pool();
-                                return;
-                            }
-                            OnWinAction::Continue => {
-                                Logger::info(
-                                    "Continuing in freeplay after reaching restart_on_round.",
-                                );
+                    }
+
+                    // Extract everything we need from CURRENT_MAP in a single read-lock scope,
+                    // before executing actions (which may themselves acquire a write lock).
+                    let (restart_on_round, on_win_action, round_actions) = {
+                        let current_map_read_lock = CURRENT_MAP.read().unwrap();
+                        let current_map = current_map_read_lock.as_ref().unwrap();
+                        // Get all missed instructions in range (last_seen_round + 1, current_round)
+                        let actions = current_map
+                            .instructions
+                            .iter()
+                            .filter(|&(round, _)| *round > previous_round && *round <= current_round)
+                            .flat_map(|(_, actions)| actions.iter())
+                            .cloned()
+                            .collect::<Vec<_>>();
+                        Logger::debug(format!(
+                            "Executing {} actions for rounds {} to {}...",
+                            actions.len(),
+                            previous_round + 1,
+                            current_round
+                        ));
+                        (
+                            current_map.restart_on_round,
+                            current_map.on_win_action.clone(),
+                            actions,
+                        )
+                    };
+
+                    if round_actions.is_empty() {
+                        Logger::debug(format!(
+                            "No actions found for rounds {}-{}",
+                            previous_round + 1,
+                            current_round
+                        ));
+                    }
+
+                    for action_str in &round_actions {
+                        Logger::info(format!("Executing action: {}", action_str));
+                        match action_parser::parse_action(action_str) {
+                            Ok(action) => match action.run() {
+                                Ok(_) => {
+                                    Logger::info(format!("Successfully ran action: {:?}", action_str))
+                                }
+                                Err(e) => Logger::error(format!("Failed to run action: {:?}", e)),
+                            },
+                            Err(e) => Logger::error(format!(
+                                "Action Parser failed to parse an action: {:?}",
+                                e
+                            )),
+                        }
+                    }
+
+                    // If this round matches restart_on_round, trigger the restart sequence now
+                    // (all towers have been placed; let the configured action decide what happens next)
+                    if let Some(target_round) = restart_on_round {
+                        if current_round == target_round {
+                            Logger::notice(format!(
+                                "Reached restart_on_round ({}), triggering restart.",
+                                target_round
+                            ));
+                            match on_win_action {
+                                OnWinAction::Restart => {
+                                    game_wins += 1;
+                                    stop_repeat_pool();
+                                    restart_game(&settings);
+                                    last_seen_round = 0;
+                                    round_unchanged_count = 0;
+                                    pending_large_jump = None;
+                                }
+                                OnWinAction::EndGame => {
+                                    Logger::notice(format!(
+                                        "EndGame action - exiting after {} win(s) and {} loss(es).",
+                                        game_wins, game_losses
+                                    ));
+                                    stop_repeat_pool();
+                                    return;
+                                }
+                                OnWinAction::Continue => {
+                                    Logger::info(
+                                        "Continuing in freeplay after reaching restart_on_round.",
+                                    );
+                                }
                             }
                         }
                     }
+                } else {
+                    round_unchanged_count += 1;
+                    Logger::debug(format!(
+                        "Round unchanged at {} (count={})",
+                        current_round, round_unchanged_count
+                    ));
                 }
             } else {
+                // Pending large-jump confirmation – treat as unchanged this iteration.
                 round_unchanged_count += 1;
-                Logger::debug(format!(
-                    "Round unchanged at {} (count={})",
-                    current_round, round_unchanged_count
-                ));
             }
         } else {
             // Unparseable output counts as unchanged
@@ -716,6 +782,7 @@ fn main() {
                         stop_repeat_pool();
                         restart_game(&settings);
                         last_seen_round = 0;
+                        pending_large_jump = None;
                     }
                     OnWinAction::EndGame => {
                         Logger::notice(format!(
