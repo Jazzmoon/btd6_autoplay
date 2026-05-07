@@ -557,11 +557,15 @@ fn main() {
                         // and treat this new value as a fresh pending candidate.
                         Logger::warn(format!(
                             "Large round jump to {} was a misread (expected {}, got {}). \
-                             Resuming from {}. New large jump detected, awaiting confirmation.",
+                             Resuming from {}.",
                             pending,
                             pending + 1,
                             current_round,
                             last_seen_round
+                        ));
+                        Logger::warn(format!(
+                            "Large round jump detected: {} -> {} (jump of {}). Awaiting confirmation.",
+                            last_seen_round, current_round, jump
                         ));
                         pending_large_jump = Some(current_round);
                         None
