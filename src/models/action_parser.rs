@@ -93,6 +93,25 @@ pub fn parse_action(action: &str) -> Result<Box<dyn ActionTrait>, Box<dyn StdErr
                 tower_hotkey,
             }))
         }
+        "press" => {
+            let args = &action_array[1..];
+            if args.is_empty() {
+                return Err("Press action requires at least one key.".into());
+            }
+            let keys = args
+                .iter()
+                .map(|k| Hotkey::from(&[*k][..]))
+                .collect::<Vec<_>>();
+            Ok(Box::new(actions::press::Press { keys }))
+        }
+        "select" => {
+            if action_array.len() < 2 {
+                return Err("Select action requires a tower name.".into());
+            }
+            Ok(Box::new(actions::select::Select {
+                tower: action_array[1].to_string(),
+            }))
+        }
         "sell" => Ok(Box::new(actions::sell::Sell {
             tower: action_array[1].to_string(),
         })),
