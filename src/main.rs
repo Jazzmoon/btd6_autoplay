@@ -579,6 +579,17 @@ fn main() {
                     pending_large_jump = Some(current_round);
                     None
                 }
+            } else if last_seen_round > 0 && current_round < last_seen_round {
+                // The round went backwards, which should never happen unless
+                // the game restarted (in which case last_seen_round would have
+                // been reset to 0 already).  Treat this as a Tesseract misread
+                // and discard the value.
+                Logger::warn(format!(
+                    "Round decreased from {} to {} – discarding as misread.",
+                    last_seen_round, current_round
+                ));
+                pending_large_jump = None;
+                None
             } else {
                 // Normal (small) increment.  If a large jump was pending,
                 // the expected next round did not follow – it was a misread.
