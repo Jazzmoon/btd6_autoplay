@@ -533,13 +533,41 @@ fn main() {
         if let Some((current_round, total_rounds)) = parsed_round {
             // Guard against Tesseract misreads that produce impossibly large or
             // backward round values.
-            let jump = current_round - last_seen_round;
+            //
+            // Use the best available baseline for jump-size checks:
+            //   • last_seen_round  – when we have already seen at least one round
+            //   • last_known_total – as a sanity ceiling for the very first read
+            let baseline = if last_seen_round > 0 {
+                last_seen_round
+            } else {
+                0
+            };
+            let jump = current_round - baseline;
 
             let accepted_round: Option<i32> =
-                if last_seen_round > 0 && jump >= LARGE_JUMP_THRESHOLD {
-                    // Hard cut-off: a jump of 10 or more rounds in a single
-                    // read is always a Tesseract misread (e.g. "14/100" →
-                    // "114/100"). Reject unconditionally.
+                if total_rounds > 0
+                    && current_round > total_rounds
+                    && last_seen_round < total_rounds
+                {
+                    // current_round exceeds the known total while we are still
+                    // inside the normal game (not freeplay).  This is an
+                    // impossible value – almost certainly Tesseract garbling the
+                    // slash (e.g. "41/100" → "413/100" → current_round = 413).
+                    Logger::warn(format!(
+                        "current_round {} exceeds total_rounds {} while still in normal game – \
+                         discarding as misread.",
+                        current_round, total_rounds
+                    ));
+                    None
+                } else if jump >= LARGE_JUMP_THRESHOLD
+                    && (last_seen_round > 0
+                        || (last_known_total > 0 && current_round > last_known_total))
+                {
+                    // Hard cut-off: a jump of LARGE_JUMP_THRESHOLD or more rounds
+                    // in a single read is always a Tesseract misread.  We apply
+                    // this unconditionally when we have a prior baseline
+                    // (last_seen_round > 0), and also when last_seen_round == 0
+                    // but a known total makes the value implausible.
                     Logger::warn(format!(
                         "Round jumped by {} (from {} to {}) – exceeds hard cut-off of {}. \
                          Discarding as misread.",
