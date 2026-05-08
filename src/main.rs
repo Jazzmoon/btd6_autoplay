@@ -444,10 +444,12 @@ fn main() {
     // can discard no-slash reads that fall below it (likely Tesseract merging
     // digits and the slash, e.g. "71000" instead of "7/100").
     let mut last_known_total: i32 = -1;
-    // When a round jumps by more than LARGE_JUMP_THRESHOLD we hold the value
-    // here and require a second consecutive matching read before accepting it.
-    let mut pending_large_jump: Option<i32> = None;
+    // A jump of LARGE_JUMP_THRESHOLD or more rounds in a single read is always
+    // rejected as a Tesseract misread – no confirmation window is offered.
+    // A jump of WARN_JUMP_THRESHOLD or more (but below LARGE_JUMP_THRESHOLD)
+    // is accepted but logged at warning level.
     const LARGE_JUMP_THRESHOLD: i32 = 10;
+    const WARN_JUMP_THRESHOLD: i32 = 3;
 
     while args.number == -1 || game_wins + game_losses < args.number {
         // Re-arm the stop token at the top of every loop iteration. During a normal game it is
@@ -529,79 +531,71 @@ fn main() {
         }
 
         if let Some((current_round, total_rounds)) = parsed_round {
-            // Guard against massive round jumps caused by Tesseract misreads
-            // (e.g. "14/100" → "114/100", giving current_round = 114 when it
-            // should be 14).  When the jump exceeds LARGE_JUMP_THRESHOLD we
-            // store the pending value and wait for the *next* read.  The large
-            // jump is confirmed only if the following read equals pending + 1
-            // (the expected next sequential round).  If the following read does
-            // not equal pending + 1 the pending value is discarded as a
-            // misread and we resume from last_seen_round.
-            let jump = current_round - last_seen_round;
-            let is_large_jump = last_seen_round > 0 && jump > LARGE_JUMP_THRESHOLD;
+            // Guard against Tesseract misreads that produce impossibly large or
+            // backward round values.
+            //
+            // Use the best available baseline for jump-size checks:
+            //   • last_seen_round  – when we have already seen at least one round
+            //   • last_known_total – as a sanity ceiling for the very first read
+            let baseline = if last_seen_round > 0 {
+                last_seen_round
+            } else {
+                0
+            };
+            let jump = current_round - baseline;
 
-            let accepted_round: Option<i32> = if is_large_jump {
-                if let Some(pending) = pending_large_jump {
-                    if current_round == pending + 1 {
-                        // The round following the pending large jump is exactly
-                        // pending + 1, confirming the jump was real.
-                        Logger::notice(format!(
-                            "Large round jump confirmed: {} -> {} (jump of {}), next round {}",
-                            last_seen_round, pending, pending - last_seen_round, current_round
-                        ));
-                        pending_large_jump = None;
-                        Some(current_round)
-                    } else {
-                        // The pending large jump was not followed by its
-                        // expected next round – it was a misread.  Discard it
-                        // and treat this new value as a fresh pending candidate.
+            let accepted_round: Option<i32> =
+                if total_rounds > 0
+                    && current_round > total_rounds
+                    && last_seen_round < total_rounds
+                {
+                    // current_round exceeds the known total while we are still
+                    // inside the normal game (not freeplay).  This is an
+                    // impossible value – almost certainly Tesseract garbling the
+                    // slash (e.g. "41/100" → "413/100" → current_round = 413).
+                    Logger::warn(format!(
+                        "current_round {} exceeds total_rounds {} while still in normal game – \
+                         discarding as misread.",
+                        current_round, total_rounds
+                    ));
+                    None
+                } else if jump >= LARGE_JUMP_THRESHOLD
+                    && (last_seen_round > 0
+                        || (last_known_total > 0 && current_round > last_known_total))
+                {
+                    // Hard cut-off: a jump of LARGE_JUMP_THRESHOLD or more rounds
+                    // in a single read is always a Tesseract misread.  We apply
+                    // this unconditionally when we have a prior baseline
+                    // (last_seen_round > 0), and also when last_seen_round == 0
+                    // but a known total makes the value implausible.
+                    Logger::warn(format!(
+                        "Round jumped by {} (from {} to {}) – exceeds hard cut-off of {}. \
+                         Discarding as misread.",
+                        jump, last_seen_round, current_round, LARGE_JUMP_THRESHOLD
+                    ));
+                    None
+                } else if last_seen_round > 0 && current_round < last_seen_round {
+                    // The round went backwards, which should never happen unless
+                    // the game restarted (in which case last_seen_round would have
+                    // been reset to 0 already).  Treat this as a Tesseract misread
+                    // and discard the value.
+                    Logger::warn(format!(
+                        "Round decreased from {} to {} – discarding as misread.",
+                        last_seen_round, current_round
+                    ));
+                    None
+                } else {
+                    // Acceptable increment.  Warn if the jump is suspiciously
+                    // large (>= WARN_JUMP_THRESHOLD) but still below the hard
+                    // cut-off.
+                    if last_seen_round > 0 && jump >= WARN_JUMP_THRESHOLD {
                         Logger::warn(format!(
-                            "Large round jump to {} was a misread (expected {}, got {}). \
-                             Resuming from {}.",
-                            pending,
-                            pending + 1,
-                            current_round,
-                            last_seen_round
-                        ));
-                        Logger::warn(format!(
-                            "Large round jump detected: {} -> {} (jump of {}). Awaiting confirmation.",
+                            "Unusually large round jump: {} -> {} (jump of {}).",
                             last_seen_round, current_round, jump
                         ));
-                        pending_large_jump = Some(current_round);
-                        None
                     }
-                } else {
-                    // First time seeing this large jump – hold for one round.
-                    Logger::warn(format!(
-                        "Large round jump detected: {} -> {} (jump of {}). Awaiting confirmation.",
-                        last_seen_round, current_round, jump
-                    ));
-                    pending_large_jump = Some(current_round);
-                    None
-                }
-            } else if last_seen_round > 0 && current_round < last_seen_round {
-                // The round went backwards, which should never happen unless
-                // the game restarted (in which case last_seen_round would have
-                // been reset to 0 already).  Treat this as a Tesseract misread
-                // and discard the value.
-                Logger::warn(format!(
-                    "Round decreased from {} to {} – discarding as misread.",
-                    last_seen_round, current_round
-                ));
-                pending_large_jump = None;
-                None
-            } else {
-                // Normal (small) increment.  If a large jump was pending,
-                // the expected next round did not follow – it was a misread.
-                if let Some(pending) = pending_large_jump {
-                    Logger::warn(format!(
-                        "Large round jump to {} was a misread. Resuming from {}.",
-                        pending, last_seen_round
-                    ));
-                }
-                pending_large_jump = None;
-                Some(current_round)
-            };
+                    Some(current_round)
+                };
 
             if let Some(current_round) = accepted_round {
                 if current_round != last_seen_round {
@@ -683,7 +677,6 @@ fn main() {
                                     restart_game(&settings);
                                     last_seen_round = 0;
                                     round_unchanged_count = 0;
-                                    pending_large_jump = None;
                                     last_known_total = -1;
                                 }
                                 OnWinAction::EndGame => {
@@ -710,7 +703,7 @@ fn main() {
                     ));
                 }
             } else {
-                // Pending large-jump confirmation – treat as unchanged this iteration.
+                // Rejected read (misread) – treat as unchanged this iteration.
                 round_unchanged_count += 1;
             }
         } else {
@@ -827,7 +820,6 @@ fn main() {
                         stop_repeat_pool();
                         restart_game(&settings);
                         last_seen_round = 0;
-                        pending_large_jump = None;
                         last_known_total = -1;
                     }
                     OnWinAction::EndGame => {
