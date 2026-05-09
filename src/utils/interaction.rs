@@ -25,15 +25,10 @@ pub fn move_cursor(coords: Coords, delay: Option<u64>) -> InputResult<()> {
 
 pub fn click(coords: Coords, delay: Option<u64>) -> InputResult<()> {
     std::thread::sleep(std::time::Duration::from_millis(delay.unwrap_or(100)));
-    let rel_coords = {
-        let current_window_read_lock = CURRENT_WINDOW.read().unwrap();
-        let current_window = current_window_read_lock.as_ref().unwrap().get();
-        coords.relative_to_window(current_window)
-    };
     let enigo_settings_read_lock = ENIGO_SETTINGS.read().unwrap();
     let enigo_settings = enigo_settings_read_lock.as_ref().unwrap();
     let mut enigo = Enigo::new(enigo_settings).unwrap();
-    let _ = move_cursor(rel_coords.clone(), None);
+    let _ = move_cursor(coords, None);
     enigo.button(Left, Click)?;
     Ok(())
 }
