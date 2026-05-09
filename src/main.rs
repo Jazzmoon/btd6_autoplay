@@ -64,17 +64,8 @@ struct Args {
     log_level: String,
 }
 
-/// Navigate the post-game UI and restart the current map from round 1.
-///
-/// On victory (`won = true`) the full flow is executed:
-///   next → decline freeplay → Escape × 2 → restart → confirm
-///
-/// On defeat (`won = false`) the restart button is immediately visible on screen,
-/// so the victory-specific steps are skipped to avoid deadlock:
-///   restart → confirm
-///
-/// Also clears all placed tower state from `CURRENT_MAP` so the next
-/// game starts with a clean slate.
+/// Restart the current map. On victory, navigates through next/freeplay/menu first;
+/// on defeat the restart button is directly available so those steps are skipped.
 fn restart_game(settings: &btd6_autoplay::models::settings::Settings, won: bool) {
     if won {
         let menu_hotkey = {
@@ -82,20 +73,15 @@ fn restart_game(settings: &btd6_autoplay::models::settings::Settings, won: bool)
             hotkeys_read_lock.as_ref().unwrap().menu.clone()
         };
 
-        // Click the "Next" button on the victory screen
         let _ = interaction::click(settings.game.next_button.clone(), Some(2000));
-        // Decline the freeplay offer
         let _ = interaction::click(settings.game.freeplay_button.clone(), Some(2000));
-        // Open the in-game menu (press Escape twice to get to the restart option)
         let _ = interaction::press_key(menu_hotkey.clone(), Some(1000));
         let _ = interaction::press_key(menu_hotkey, Some(1000));
     }
 
-    // Click "Restart" and then confirm
     let _ = interaction::click(settings.game.restart_game_button.clone(), Some(1000));
     let _ = interaction::click(settings.game.confirm_button.clone(), Some(1000));
 
-    // Clear placed towers so the next game starts fresh
     {
         let mut current_map_write_lock = CURRENT_MAP.write().unwrap();
         if let Some(current_map) = current_map_write_lock.as_mut() {
