@@ -10,6 +10,7 @@ use xcap::Window;
 use btd6_autoplay::{
     models::{
         action_parser,
+        coords::Coords,
         map::{OnWinAction, RoundCounterMode},
     },
     utils::{
@@ -794,6 +795,28 @@ fn main() {
 
             if did_win.is_none() {
                 Logger::debug("Victory/defeat OCR inconclusive");
+
+                // Impoppable and Chimps end at round 100. After any round that
+                // is a multiple of 100, the game shows a purple "INSTA-MONKeY"
+                // unlock splash that covers the Victory banner and must be
+                // dismissed with a click before the normal victory flow can
+                // proceed.  Defeat ends the game before this screen appears,
+                // so we only need to handle the victory path here.
+                let is_insta_monkey_gamemode = matches!(
+                    gamemode.as_deref(),
+                    Some("impoppable") | Some("chimps")
+                );
+                if is_insta_monkey_gamemode && last_seen_round > 0 && last_seen_round % 100 == 0 {
+                    Logger::notice(format!(
+                        "Insta-Monkey unlock screen expected after round {}; clicking center of screen to dismiss.",
+                        last_seen_round
+                    ));
+                    let center = Coords {
+                        x: settings.screen.x + settings.screen.w / 2,
+                        y: settings.screen.y + settings.screen.h / 2,
+                    };
+                    let _ = interaction::click(center, Some(1000));
+                }
             }
 
             if let Some(won) = did_win {
