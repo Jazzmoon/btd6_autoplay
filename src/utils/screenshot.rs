@@ -44,6 +44,8 @@ pub fn capture_screenshot() -> DynamicImage {
                         .height()
                         .expect("Game window must exist to continue")
                 ));
+            }
+            if Logger::is_enabled(LogLevel::Trace) {
                 let _ = dyn_image.save("debug/bloons_window_capture.png");
             }
             dyn_image
@@ -139,7 +141,7 @@ pub fn capture_area(
         dyn_image = DynamicImage::ImageRgba8(image_buffer);
     };
 
-    if Logger::is_enabled(LogLevel::Debug) {
+    if Logger::is_enabled(LogLevel::Trace) {
         let _ = dyn_image.save(format!("debug/post_processing_{debug_image_name}.png"));
         Logger::debug(format!(
             "Saved debug image: debug/post_processing_{debug_image_name}.png"

@@ -97,7 +97,29 @@ fn restart_game(settings: &btd6_autoplay::models::settings::Settings) {
     }
 }
 
-/// Search all open windows for one whose app name or title contains any of the given search terms.
+/// Navigate the post-game UI on defeat and restart the current map from round 1.
+///
+/// On the defeat screen the restart button is immediately visible; there is no
+/// "Next" button, no freeplay offer, and no need to open the in-game menu first.
+/// Clicking anything else before the restart button would lock the bot in deadlock.
+///
+/// Also clears all placed tower state from `CURRENT_MAP` so the next
+/// game starts with a clean slate.
+fn restart_game_on_defeat(settings: &btd6_autoplay::models::settings::Settings) {
+    // Click "Restart" directly on the defeat screen, then confirm
+    let _ = interaction::click(settings.game.restart_game_button.clone(), Some(1000));
+    let _ = interaction::click(settings.game.confirm_button.clone(), Some(1000));
+
+    // Clear placed towers so the next game starts fresh
+    {
+        let mut current_map_write_lock = CURRENT_MAP.write().unwrap();
+        if let Some(current_map) = current_map_write_lock.as_mut() {
+            current_map.towers.clear();
+        }
+    }
+}
+
+
 /// Returns the matched `Window` and a list of all other window names that were seen (for debugging).
 fn find_game_window(search_terms: &[String]) -> (Option<Window>, Vec<String>) {
     let mut found = None;
@@ -486,7 +508,7 @@ fn main() {
             "round_counter".to_string(),
         );
 
-        if Logger::is_enabled(LogLevel::Debug) {
+        if Logger::is_enabled(LogLevel::Trace) {
             let _ = round_counter.save("debug/round_counter.png");
         }
 
@@ -820,7 +842,19 @@ fn main() {
                     gamemode.as_deref(),
                     Some("impoppable") | Some("chimps")
                 );
+                if is_insta_monkey_gamemode {
+                    Logger::debug(format!(
+                        "Insta-monkey gamemode active; last_seen_round={}, \
+                         will check for INSTA-MONKeY splash: {}",
+                        last_seen_round,
+                        last_seen_round > 0 && last_seen_round % 100 == 0
+                    ));
+                }
                 if is_insta_monkey_gamemode && last_seen_round > 0 && last_seen_round % 100 == 0 {
+                    Logger::debug(format!(
+                        "Checking for INSTA-MONKeY unlock splash at round {}",
+                        last_seen_round
+                    ));
                     let insta_monkey_image = capture_area(
                         screenshot.clone(),
                         settings.game.insta_monkey_banner.clone(),
@@ -833,12 +867,10 @@ fn main() {
                         &convert_to_rusty_image(insta_monkey_image),
                         &rt_insta_monkey_args,
                     );
-                    if Logger::is_enabled(LogLevel::Debug) {
-                        Logger::debug(format!(
-                            "Insta-Monkey banner OCR output: '{}'",
-                            insta_monkey_text.as_ref().unwrap_or(&"".to_string())
-                        ));
-                    }
+                    Logger::debug(format!(
+                        "Insta-Monkey banner OCR output: '{}'",
+                        insta_monkey_text.as_ref().unwrap_or(&"".to_string())
+                    ));
                     let found_insta_monkey = insta_monkey_text
                         .as_ref()
                         .map(|t| {
@@ -846,6 +878,7 @@ fn main() {
                             upper.contains("INSTA") && upper.contains("MONKEY")
                         })
                         .unwrap_or(false);
+                    Logger::debug(format!("INSTA-MONKeY banner found: {}", found_insta_monkey));
                     if found_insta_monkey {
                         Logger::notice(format!(
                             "INSTA-MONKeY unlock screen detected after round {}; clicking center of screen to dismiss.",
@@ -886,7 +919,11 @@ fn main() {
                     OnWinAction::Restart => {
                         Logger::notice("Restarting game...");
                         stop_repeat_pool();
-                        restart_game(&settings);
+                        if won {
+                            restart_game(&settings);
+                        } else {
+                            restart_game_on_defeat(&settings);
+                        }
                         last_seen_round = 0;
                         last_known_total = -1;
                     }
