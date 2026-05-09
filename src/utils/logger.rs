@@ -16,6 +16,8 @@ pub enum LogLevel {
     Notice = 5,
     Info = 6,
     Debug = 7,
+    /// Lower than `Debug`. Enables image file output in addition to text logs.
+    Trace = 8,
 }
 
 impl std::str::FromStr for LogLevel {
@@ -31,6 +33,7 @@ impl std::str::FromStr for LogLevel {
             "notice" => Ok(Self::Notice),
             "info" => Ok(Self::Info),
             "debug" => Ok(Self::Debug),
+            "trace" => Ok(Self::Trace),
             _ => Err(format!("Unknown log level: '{}'", input)),
         }
     }
@@ -47,6 +50,7 @@ impl LogLevel {
             5 => Some(Self::Notice),
             6 => Some(Self::Info),
             7 => Some(Self::Debug),
+            8 => Some(Self::Trace),
             _ => None,
         }
     }
@@ -61,6 +65,7 @@ impl LogLevel {
             Self::Notice => "NOTICE",
             Self::Info => "INFO",
             Self::Debug => "DEBUG",
+            Self::Trace => "TRACE",
         }
     }
 
@@ -74,6 +79,7 @@ impl LogLevel {
             Self::Notice => "\x1b[36m",
             Self::Info => "\x1b[32m",
             Self::Debug => "\x1b[90m",
+            Self::Trace => "\x1b[2;36m",
         }
     }
 }
@@ -100,6 +106,10 @@ impl Logger {
 
     pub fn debug(message: impl AsRef<str>) {
         Self::log(LogLevel::Debug, message);
+    }
+
+    pub fn trace(message: impl AsRef<str>) {
+        Self::log(LogLevel::Trace, message);
     }
 
     pub fn info(message: impl AsRef<str>) {
