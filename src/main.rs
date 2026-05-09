@@ -841,11 +841,14 @@ fn main() {
                     }
                     let found_insta_monkey = insta_monkey_text
                         .as_ref()
-                        .map(|t| t.to_uppercase().contains("INSTA"))
+                        .map(|t| {
+                            let upper = t.to_uppercase();
+                            upper.contains("INSTA") && upper.contains("MONKEY")
+                        })
                         .unwrap_or(false);
                     if found_insta_monkey {
                         Logger::notice(format!(
-                            "Insta-Monkey unlock screen detected after round {}; clicking center of screen to dismiss.",
+                            "INSTA-MONKeY unlock screen detected after round {}; clicking center of screen to dismiss.",
                             last_seen_round
                         ));
                         let center = Coords {
@@ -855,7 +858,7 @@ fn main() {
                         let _ = interaction::click(center, Some(1000));
                     } else {
                         Logger::debug(
-                            "Insta-Monkey banner not yet detected; will check again next iteration.",
+                            "INSTA-MONKeY banner not yet detected; will check again next iteration.",
                         );
                     }
                 }
