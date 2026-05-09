@@ -10,6 +10,7 @@ use xcap::Window;
 use btd6_autoplay::{
     models::{
         action_parser,
+        coords::Coords,
         map::{OnWinAction, RoundCounterMode},
     },
     utils::{
@@ -393,7 +394,7 @@ fn main() {
         "eng"
     };
 
-    let (rt_round_args, rt_victory_args, rt_defeat_args) = (
+    let (rt_round_args, rt_victory_args, rt_defeat_args, rt_insta_monkey_args) = (
         RTArgs {
             lang: lang.into(),
             config_variables: HashMap::from([(
@@ -415,6 +416,16 @@ fn main() {
             lang: lang.into(),
             config_variables: HashMap::from([("tessedit_char_whitelist".into(), "DeFeAT".into())]),
             dpi: Some(300),
+            psm: Some(6),
+            oem: Some(3),
+        },
+        RTArgs {
+            lang: lang.into(),
+            config_variables: HashMap::from([(
+                "tessedit_char_whitelist".into(),
+                "INSTA-MONKeY".into(),
+            )]),
+            dpi: Some(150),
             psm: Some(6),
             oem: Some(3),
         },
@@ -794,6 +805,63 @@ fn main() {
 
             if did_win.is_none() {
                 Logger::debug("Victory/defeat OCR inconclusive");
+
+                // Impoppable and Chimps end at round 100. After any round that
+                // is a multiple of 100, the game shows a purple "INSTA-MONKeY"
+                // unlock splash that covers the Victory banner and must be
+                // dismissed with a click before the normal victory flow can
+                // proceed.  Defeat ends the game before this screen appears,
+                // so we only need to handle the victory path here.
+                //
+                // Only click when the banner text is positively identified by
+                // OCR to avoid false positives; otherwise skip this iteration
+                // and check again on the next pass.
+                let is_insta_monkey_gamemode = matches!(
+                    gamemode.as_deref(),
+                    Some("impoppable") | Some("chimps")
+                );
+                if is_insta_monkey_gamemode && last_seen_round > 0 && last_seen_round % 100 == 0 {
+                    let insta_monkey_image = capture_area(
+                        screenshot.clone(),
+                        settings.game.insta_monkey_banner.clone(),
+                        processing_actions,
+                        None,
+                        None,
+                        "insta_monkey_banner".to_string(),
+                    );
+                    let insta_monkey_text = image_to_string(
+                        &convert_to_rusty_image(insta_monkey_image),
+                        &rt_insta_monkey_args,
+                    );
+                    if Logger::is_enabled(LogLevel::Debug) {
+                        Logger::debug(format!(
+                            "Insta-Monkey banner OCR output: '{}'",
+                            insta_monkey_text.as_ref().unwrap_or(&"".to_string())
+                        ));
+                    }
+                    let found_insta_monkey = insta_monkey_text
+                        .as_ref()
+                        .map(|t| {
+                            let upper = t.to_uppercase();
+                            upper.contains("INSTA") && upper.contains("MONKEY")
+                        })
+                        .unwrap_or(false);
+                    if found_insta_monkey {
+                        Logger::notice(format!(
+                            "INSTA-MONKeY unlock screen detected after round {}; clicking center of screen to dismiss.",
+                            last_seen_round
+                        ));
+                        let center = Coords {
+                            x: settings.screen.x + settings.screen.w / 2,
+                            y: settings.screen.y + settings.screen.h / 2,
+                        };
+                        let _ = interaction::click(center, Some(1000));
+                    } else {
+                        Logger::debug(
+                            "INSTA-MONKeY banner not yet detected; will check again next iteration.",
+                        );
+                    }
+                }
             }
 
             if let Some(won) = did_win {
