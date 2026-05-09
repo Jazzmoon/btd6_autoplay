@@ -19,6 +19,11 @@ game:
         y: 382
         w: 632
         h: 156
+    insta_monkey_banner:
+        x: 430
+        y: 430
+        w: 1700
+        h: 265
     next_button:
         x: 1285
         y: 1210
