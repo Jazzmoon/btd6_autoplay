@@ -66,47 +66,32 @@ struct Args {
 
 /// Navigate the post-game UI and restart the current map from round 1.
 ///
-/// Flow (mirrors the Python `Game.restart_game`):
+/// On victory (`won = true`) the full flow is executed:
 ///   next → decline freeplay → Escape × 2 → restart → confirm
 ///
+/// On defeat (`won = false`) the restart button is immediately visible on screen,
+/// so the victory-specific steps are skipped to avoid deadlock:
+///   restart → confirm
+///
 /// Also clears all placed tower state from `CURRENT_MAP` so the next
 /// game starts with a clean slate.
-fn restart_game(settings: &btd6_autoplay::models::settings::Settings) {
-    let menu_hotkey = {
-        let hotkeys_read_lock = HOTKEYS.read().unwrap();
-        hotkeys_read_lock.as_ref().unwrap().menu.clone()
-    };
+fn restart_game(settings: &btd6_autoplay::models::settings::Settings, won: bool) {
+    if won {
+        let menu_hotkey = {
+            let hotkeys_read_lock = HOTKEYS.read().unwrap();
+            hotkeys_read_lock.as_ref().unwrap().menu.clone()
+        };
 
-    // Click the "Next" button on the victory/defeat screen
-    let _ = interaction::click(settings.game.next_button.clone(), Some(2000));
-    // Decline the freeplay offer
-    let _ = interaction::click(settings.game.freeplay_button.clone(), Some(2000));
-    // Open the in-game menu (press Escape twice to get to the restart option)
-    let _ = interaction::press_key(menu_hotkey.clone(), Some(1000));
-    let _ = interaction::press_key(menu_hotkey, Some(1000));
-    // Click "Restart" and then confirm
-    let _ = interaction::click(settings.game.restart_game_button.clone(), Some(1000));
-    let _ = interaction::click(settings.game.confirm_button.clone(), Some(1000));
-
-    // Clear placed towers so the next game starts fresh
-    {
-        let mut current_map_write_lock = CURRENT_MAP.write().unwrap();
-        if let Some(current_map) = current_map_write_lock.as_mut() {
-            current_map.towers.clear();
-        }
+        // Click the "Next" button on the victory screen
+        let _ = interaction::click(settings.game.next_button.clone(), Some(2000));
+        // Decline the freeplay offer
+        let _ = interaction::click(settings.game.freeplay_button.clone(), Some(2000));
+        // Open the in-game menu (press Escape twice to get to the restart option)
+        let _ = interaction::press_key(menu_hotkey.clone(), Some(1000));
+        let _ = interaction::press_key(menu_hotkey, Some(1000));
     }
-}
 
-/// Navigate the post-game UI on defeat and restart the current map from round 1.
-///
-/// On the defeat screen the restart button is immediately visible; there is no
-/// "Next" button, no freeplay offer, and no need to open the in-game menu first.
-/// Clicking anything else before the restart button would lock the bot in deadlock.
-///
-/// Also clears all placed tower state from `CURRENT_MAP` so the next
-/// game starts with a clean slate.
-fn restart_game_on_defeat(settings: &btd6_autoplay::models::settings::Settings) {
-    // Click "Restart" directly on the defeat screen, then confirm
+    // Click "Restart" and then confirm
     let _ = interaction::click(settings.game.restart_game_button.clone(), Some(1000));
     let _ = interaction::click(settings.game.confirm_button.clone(), Some(1000));
 
@@ -707,7 +692,7 @@ fn main() {
                                 OnWinAction::Restart => {
                                     game_wins += 1;
                                     stop_repeat_pool();
-                                    restart_game(&settings);
+                                    restart_game(&settings, true);
                                     last_seen_round = 0;
                                     round_unchanged_count = 0;
                                     last_known_total = -1;
@@ -919,11 +904,7 @@ fn main() {
                     OnWinAction::Restart => {
                         Logger::notice("Restarting game...");
                         stop_repeat_pool();
-                        if won {
-                            restart_game(&settings);
-                        } else {
-                            restart_game_on_defeat(&settings);
-                        }
+                        restart_game(&settings, won);
                         last_seen_round = 0;
                         last_known_total = -1;
                     }
