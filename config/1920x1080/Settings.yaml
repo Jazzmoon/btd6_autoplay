@@ -20,10 +20,10 @@ game:
         w: 730
         h: 115
     insta_monkey_banner:
-        x: 320
-        y: 320
-        w: 1280
-        h: 200
+        x: 669
+        y: 269
+        w: 535
+        h: 48
     next_button:
         x: 965
         y: 1464
