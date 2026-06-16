@@ -4,31 +4,30 @@ An automation bot for Bloons Tower Defense 6, written in Rust. It uses screen ca
 
 ## Disclaimer
 
-Please be aware, Ninja Kiwi doesn't support the use of internal or external modding. Under Ninja Kiwi's Terms of Service, scripts such as this one can lead to a ban on your account. Using this, or any other script like it, means that you accept this risk and agree we (Jazzmoon) are not held accountable for any actions taken against your account.
+This project is an unofficial automation tool and is not affiliated with, endorsed by, or supported by Ninja Kiwi. Automating gameplay may violate Ninja Kiwi's Terms of Service and could result in account action, including permanent bans. By using this software you accept full responsibility for any consequences and agree that we (Jazzmoon) are not liable for any damages or account actions arising from its use.
 
 ---
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
-- [Installing Rust (rustup)](#installing-rust-rustup)
-- [Installing Tesseract OCR](#installing-tesseract-ocr)
-  - [Linux](#linux)
-  - [macOS](#macos)
-  - [Windows (MSYS2)](#windows-msys2)
-- [Building the Bot](#building-the-bot)
-- [Game Setup](#game-setup)
-- [Usage](#usage)
-  - [Interactive Mode](#interactive-mode)
-  - [CLI Arguments](#cli-arguments)
-  - [Location Finder Utility](#location-finder-utility)
-- [Configuration](#configuration)
-  - [General Config](#general-config)
-  - [Hotkeys](#hotkeys)
-  - [Screen Resolution Settings](#screen-resolution-settings)
-  - [Map Config Files](#map-config-files)
-- [Writing a Map Config](#writing-a-map-config)
-- [Recommended `roundCounterMode` per Map](#recommended-roundcountermode-per-map)
+- [Bloons TD 6 Auto Play](#bloons-td-6-auto-play)
+  - [Disclaimer](#disclaimer)
+  - [Table of Contents](#table-of-contents)
+  - [Prerequisites](#prerequisites)
+  - [Installing Rust (rustup)](#installing-rust-rustup)
+    - [Linux / macOS](#linux--macos)
+    - [Windows](#windows)
+  - [Installing Tesseract OCR](#installing-tesseract-ocr)
+    - [Linux](#linux)
+    - [macOS](#macos)
+    - [Windows (MSYS2)](#windows-msys2)
+  - [Building the Bot](#building-the-bot)
+  - [Game Setup](#game-setup)
+  - [Usage](#usage)
+    - [Interactive Mode](#interactive-mode)
+    - [CLI Arguments](#cli-arguments)
+    - [Location Finder Utility](#location-finder-utility)
+  - [Configuration](#configuration)
 
 ---
 
@@ -245,21 +244,19 @@ Run the bot with no arguments to be guided through map, difficulty, and gamemode
 
 ### Location Finder Utility
 
-If you need to determine pixel coordinates for placing towers on a new map, use the built-in location finder. It prints the cursor's current position relative to the game window whenever you move the mouse.
-
 ```bash
 ./target/release/btd6_autoplay --location
 ```
 
-Use the reported `(x, y)` values when writing `place` instructions in a map config file.
+Prints cursor coordinates relative to the game window on each click. Use the reported `(x, y)` values when writing `place` instructions in a map config. See [maps-config.md](maps-config.md) for the full list of controls.
 
 ---
 
 ## Configuration
 
-All configuration lives in the `config/` directory.
+All configuration lives in the `config/` directory. See [maps-config.md](maps-config.md) for full documentation covering every field, all available hotkey names, how to calibrate a new screen resolution, and the complete map scripting reference.
 
-```
+```text
 config/
 ├── General.yaml                # Window search terms
 ├── Hotkeys.yaml                # In-game hotkey bindings
@@ -274,89 +271,3 @@ config/
         ├── DarkCastle.yaml
         └── Logs.yaml
 ```
-
-### General Config
-
-`config/General.yaml` controls how the bot finds the BTD6 window by searching for these substrings in the window title / app name:
-
-```yaml
-window_title_search_terms:
-  - "btd"
-  - "bloons"
-  - "steam_app_960090"
-```
-
-Add additional terms here if the bot cannot find the game window on your system.
-
-### Hotkeys
-
-`config/Hotkeys.yaml` maps logical action names to key combinations matching your in-game hotkey settings. Edit this file if you have customised the default BTD6 hotkeys.
-
-```yaml
-start: ["space"]
-dart:  ["q"]
-sub:   ["x"]
-# ... etc.
-```
-
-### Screen Resolution Settings
-
-`config/<WIDTHxHEIGHT>/Settings.yaml` stores the pixel coordinates of game UI elements (round counter, victory banner, buttons, etc.) calibrated for that resolution. If you use a different resolution you must create a new directory and `Settings.yaml` for it, using the location finder utility to determine correct coordinates.
-
-### Map Config Files
-
-`config/<WIDTHxHEIGHT>/maps/<MapName>.yaml` contains the full automation script for a map. The filename (without `.yaml`) is used as the display name in the interactive prompt.
-
----
-
-## Writing a Map Config
-
-A map config is a YAML file with the following top-level keys:
-
-```yaml
-round_counter_mode: "light"   # "light" or "dark" — see maps-config.md
-
-easy:
-  standard:
-    money_per_game: 60          # Expected income per game (informational)
-    on_win_action: "restart"    # "restart" | "continue" | "end_game"
-    hover_location:
-      x: 960
-      y: 540
-    instructions:
-      1:                        # Round number (actions run when this round starts)
-        - "start"
-        - "place <name> <tower_type> <x> <y>"
-        - "sleep 1s"
-        - "upgrade <name> <top>-<mid>-<bot>"
-      3:
-        - "place sub sub 1084 434"
-```
-
-### Supported Instructions
-
-| Instruction | Syntax | Description |
-|-------------|--------|-------------|
-| `start` | `start [fast-forward]` | Press the start/fast-forward hotkey |
-| `place` | `place <name> <type> <x> <y>` | Place a tower (`<name>` is a unique label; `<type>` matches a key in `Hotkeys.yaml`) |
-| `upgrade` | `upgrade <name> <T>-<M>-<B>` | Upgrade a previously placed tower to path `T-M-B` (e.g. `2-0-3`) |
-| `sell` | `sell <name>` | Sell a tower |
-| `ability` | `ability <name_or_key> [key2]` | Activate an ability by hotkey name or raw key |
-| `click` | `click <x> <y>` | Click at absolute coordinates |
-| `hover` | `hover <x> <y>` | Move the mouse to coordinates |
-| `obstacle` / `clear` | `obstacle <x> <y>` | Click to remove a map obstacle |
-| `sleep` | `sleep <N>[ms\|s\|m\|h]` | Pause execution (e.g. `sleep 500ms`, `sleep 2s`) |
-
-### `on_win_action` Values
-
-| Value | Behaviour |
-|-------|-----------|
-| `restart` | Replay the same map from round 1 |
-| `continue` | Proceed into free-play mode |
-| `end_game` | Return to the main menu |
-
----
-
-## Recommended `roundCounterMode` per Map
-
-The bot reads the round counter using OCR. Maps with a dark background need `round_counter_mode: "dark"` so the image is inverted before OCR. See [maps-config.md](maps-config.md) for a full list of recommended values per map.
