@@ -17,5 +17,7 @@ regex = "1.12.3"
 rusty-tesseract = "1.1.10"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_yaml = "0.9.34"
+serenity = { version = "0.12", default-features = false, features = ["http", "model", "builder", "rustls_backend"] }
 struct_iterable = "0.1.1"
+tokio = { version = "1", features = ["rt-multi-thread", "time"] }
 xcap = "0.9.4"

@@ -2,3 +2,16 @@ window_title_search_terms:
     - "btd"
     - "bloons"
     - "steam_app_960090"
+
+# Discord bot notifications (optional).
+# Uncomment and fill in the fields below to enable.
+# The bot must be invited to your server with the "Send Messages" and
+# "Read Message History" permissions in the target channel.
+#
+# discord:
+#   enabled: false
+#   bot_token: ""                      # Token from the Discord Developer Portal
+#   guild_id: 0                        # Server (guild) ID — right-click your server icon
+#   channel_name: "btd6_autoplay"      # Text channel to post updates in
+#   notify_user_id: ~                  # User ID to @-mention on crashes/alerts (null = disabled)
+#   verbosity: "notice"                # Minimum level: emerg|alert|crit|error|warn|notice|info|debug|trace
