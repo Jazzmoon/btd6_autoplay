@@ -1,0 +1,21 @@
+[package]
+name = "btd6_autoplay"
+authors = ["Cameron Maclean <BowsiePup@users.noreply.github.com>", "Mark Hutchison <MoonstarCoding@users.noreply.github.com>"]
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+bitflags = "2.11.1"
+clap = { version = "4.6.1", features = ["derive"] }
+device_query = "4.0.1"
+enigo = "0.6.1"
+fragile = "2.1.0"
+image = "0.25.10"
+inquire = "0.9.4"
+lazy_static = "1.5.0"
+regex = "1.12.3"
+rusty-tesseract = "1.1.10"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_yaml = "0.9.34"
+struct_iterable = "0.1.1"
+xcap = "0.9.4"

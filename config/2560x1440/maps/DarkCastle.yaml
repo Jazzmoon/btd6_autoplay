@@ -1,0 +1,31 @@
+round_counter_mode: "dark"
+easy:
+    standard:
+        money_per_game: 60
+        on_win_action: "restart"
+        hover_location:
+            x: 1101
+            y: 391
+        instructions:
+            1:
+                - "start fast-forward"
+                - "place obyn hero 780 653"
+                - "place dart dart 793 819"
+                - "sleep 1s"
+                - "upgrade dart 0-0-2"
+            3:
+                - "place sub sub 1451 578"
+            7:
+                - "upgrade sub 2-0-0"
+            9:
+                - "upgrade sub 2-0-1"
+            14:
+                - "upgrade sub 2-0-2"
+            18:
+                - "upgrade sub 2-0-3"
+            28:
+                - "upgrade sub 2-0-4"
+            34:
+                - "upgrade dart 0-2-2"
+            38:
+                - "upgrade dart 0-2-4"

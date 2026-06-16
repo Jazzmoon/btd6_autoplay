@@ -1,0 +1,44 @@
+screen:
+    x: 0
+    y: 0
+    w: 1920
+    h: 1080
+game:
+    round_counter:
+        x: 1561
+        y: 78
+        w: 223
+        h: 42
+    victory_banner:
+        x: 700
+        y: 666
+        w: 515
+        h: 110
+    defeat_banner:
+        x: 590
+        y: 584
+        w: 730
+        h: 115
+    insta_monkey_banner:
+        x: 669
+        y: 269
+        w: 535
+        h: 48
+    next_button:
+        x: 965
+        y: 1464
+    freeplay_button:
+        x: 1220
+        y: 629
+    freeplay_ok_button:
+        x: 965
+        y: 1309
+    restart_game_button:
+        x: 1080
+        y: 1390
+    confirm_button:
+        x: 1135
+        y: 1948
+    home_button:
+        x: 845
+        y: 1404
