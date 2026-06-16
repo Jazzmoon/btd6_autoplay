@@ -13,10 +13,14 @@ use crate::models::{
     map::{Map, MapConfig},
     settings::Settings,
 };
+use crate::utils::discord::DiscordConfig;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct GeneralConfig {
     pub window_title_search_terms: Vec<String>,
+    /// Optional Discord bot configuration. Omit or set `enabled: false` to disable.
+    #[serde(default)]
+    pub discord: Option<DiscordConfig>,
 }
 
 const DEFAULT_LOG_LEVEL: u8 = 4; // warn

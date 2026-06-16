@@ -14,6 +14,7 @@ use btd6_autoplay::{
         map::{OnWinAction, RoundCounterMode},
     },
     utils::{
+        discord::{discord_notify, discord_update_status, init_discord, DISCORD_NOTIFIER},
         global::{
             CONFIG_SCREEN_PATH, CURRENT_MAP, CURRENT_WINDOW, ENIGO_SETTINGS, GAME_ACTIVE,
             GENERAL_CONFIG, HOTKEYS, MAP_CONFIG, REPEAT_POOL,
@@ -143,6 +144,39 @@ fn main() {
     Logger::set_level(log_level);
 
     let _ = load_general_config();
+
+    // Initialise Discord notifier (no-op when not configured).
+    {
+        let general_config_read = GENERAL_CONFIG.read().unwrap();
+        if let Some(discord_config) = general_config_read
+            .as_ref()
+            .and_then(|c| c.discord.as_ref())
+        {
+            init_discord(discord_config);
+        }
+    }
+
+    // Install a panic hook so crashes produce a Discord alert before unwinding.
+    std::panic::set_hook(Box::new(|info| {
+        let msg = format!(":rotating_light: **Bot crashed!** {}", info);
+        Logger::emerg(&msg);
+        // try_lock avoids a deadlock when the panic itself was triggered while
+        // the notifier mutex was already held (e.g. inside send_message).
+        // If the lock is unavailable the Discord alert is intentionally skipped;
+        // the crash is still recorded via Logger::emerg above.
+        match DISCORD_NOTIFIER.try_lock() {
+            Ok(guard) => {
+                if let Some(n) = guard.as_ref() {
+                    n.alert(&msg);
+                }
+            }
+            Err(_) => {
+                Logger::warn(
+                    "Discord alert skipped during panic: notifier mutex was already locked.",
+                );
+            }
+        }
+    }));
 
     {
         let mut enigo_settings_write_lock = ENIGO_SETTINGS.write().unwrap();
@@ -455,6 +489,17 @@ fn main() {
     const LARGE_JUMP_THRESHOLD: i32 = 10;
     const WARN_JUMP_THRESHOLD: i32 = 3;
 
+    // Notify Discord that the bot is running.
+    discord_notify(
+        LogLevel::Notice,
+        &format!(
+            ":white_check_mark: **Bot started** \u{2014} map: `{}`, difficulty: `{}`, gamemode: `{}`",
+            map_file_name.as_deref().unwrap_or("unknown"),
+            difficulty.as_deref().unwrap_or("unknown"),
+            gamemode.as_deref().unwrap_or("unknown"),
+        ),
+    );
+
     while args.number == -1 || game_wins + game_losses < args.number {
         // Re-arm the stop token at the top of every loop iteration. During a normal game it is
         // already `true` (no-op). After a game ends and `stop_repeat_pool` clears it, the next
@@ -677,6 +722,7 @@ fn main() {
                             match on_win_action {
                                 OnWinAction::Restart => {
                                     game_wins += 1;
+                                    discord_update_status(game_wins, game_losses);
                                     stop_repeat_pool();
                                     restart_game(&settings, true);
                                     last_seen_round = 0;
@@ -684,10 +730,15 @@ fn main() {
                                     last_known_total = -1;
                                 }
                                 OnWinAction::EndGame => {
+                                    let stop_msg = format!(
+                                        ":stop_button: **Bot stopped** \u{2014} {} win(s), {} loss(es).",
+                                        game_wins, game_losses
+                                    );
                                     Logger::notice(format!(
                                         "EndGame action - exiting after {} win(s) and {} loss(es).",
                                         game_wins, game_losses
                                     ));
+                                    discord_notify(LogLevel::Notice, &stop_msg);
                                     stop_repeat_pool();
                                     return;
                                 }
@@ -877,6 +928,9 @@ fn main() {
                     game_losses += 1;
                 }
 
+                // Update the mutable Discord status message with the new counters.
+                discord_update_status(game_wins, game_losses);
+
                 let on_win_action = {
                     let current_map_read_lock = CURRENT_MAP.read().unwrap();
                     current_map_read_lock
@@ -895,10 +949,15 @@ fn main() {
                         last_known_total = -1;
                     }
                     OnWinAction::EndGame => {
+                        let stop_msg = format!(
+                            ":stop_button: **Bot stopped** \u{2014} {} win(s), {} loss(es).",
+                            game_wins, game_losses
+                        );
                         Logger::notice(format!(
                             "EndGame action - exiting after {} win(s) and {} loss(es).",
                             game_wins, game_losses
                         ));
+                        discord_notify(LogLevel::Notice, &stop_msg);
                         stop_repeat_pool();
                         return;
                     }
@@ -913,4 +972,15 @@ fn main() {
 
         sleep(Duration::from_secs(1));
     }
+
+    // The game-count limit was reached; notify and exit cleanly.
+    discord_notify(
+        LogLevel::Notice,
+        &format!(
+            ":checkered_flag: **Bot finished** \u{2014} played {} game(s): {} win(s), {} loss(es).",
+            game_wins + game_losses,
+            game_wins,
+            game_losses,
+        ),
+    );
 }

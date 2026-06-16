@@ -1,3 +1,4 @@
+pub mod discord;
 pub mod global;
 pub mod interaction;
 pub mod location_finder;
